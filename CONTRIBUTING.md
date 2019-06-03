@@ -22,6 +22,8 @@ use GitHub pull requests for this purpose. Consult
 [GitHub Help](https://help.github.com/articles/about-pull-requests/) for more
 information on using pull requests.
 
+Google Style Guide (http://google.github.io/styleguide/)) must be followed.
+
 ## Community Guidelines
 
 This project follows [Google's Open Source Community
