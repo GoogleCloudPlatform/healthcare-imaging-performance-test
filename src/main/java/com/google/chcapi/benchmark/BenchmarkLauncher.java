@@ -14,9 +14,40 @@
 
 package com.google.chcapi.benchmark;
 
-import picocli.CommandLine;
+import java.util.ResourceBundle;
 
-public class BenchmarkLauncher {
+import picocli.CommandLine;
+import picocli.CommandLine.Command;
+import picocli.CommandLine.HelpCommand;
+import picocli.CommandLine.IExecutionExceptionHandler;
+import picocli.CommandLine.ParseResult;
+
+import com.google.chcapi.benchmark.routine.DownloadDatasetBenchmark;
+import com.google.chcapi.benchmark.routine.RetrieveStudyBenchmark;
+
+/**
+ * The CLI for benchmark DICOM data transmission routines backed by Google Cloud Healthcare API.
+ * 
+ * @author Mikhail Ukhlin
+ * @see DownloadDatasetBenchmark
+ * @see RetrieveStudyBenchmark
+ */
+@Command
+public class BenchmarkLauncher implements Runnable {
+  
+  /* Singleton */
+  private BenchmarkLauncher() {
+    super();
+  }
+  
+  /**
+   * Just prints usage information to stdout (executed only when command line has no benchmark
+   * specified).
+   */
+  @Override
+  public void run() {
+    CLI.usage(System.out);
+  }
   
   /**
    * Command line entry point for DICOM performance diagnostic tool.
@@ -24,80 +55,30 @@ public class BenchmarkLauncher {
    * @param args Command line arguments.
    */
   public static void main(String[] args) {
-    System.exit(new CommandLine(new Benchmark())
-        .addSubcommand(new CommandLine.HelpCommand())
-        .addSubcommand(new DownloadDatasetCommand())
-        .addSubcommand(new RetrieveStudyCommand())
-        .execute(args));
+    System.exit(CLI.execute(args));
   }
   
   /**
-   * Common options for benchmarks.
+   * Creates exception handler for errors occurred in the benchmark routines. Returned exception
+   * handler will print error message to stderr without stacktrace and return 1 as exit code.
    * 
-   * @author Mikhail Ukhlin
+   * @return Exception handler for errors occurred in the benchmark routines.
    */
-  static abstract class BenchmarkOptions {
-    
-    @CommandLine.Option(
-        names = {"-i", "--iterations"},
-        descriptionKey = "benchmark.iterations.description",
-        required = false
-    )
-    protected int iterations = 1;
-    
-    @CommandLine.Option(
-        names = {"-o", "--output"},
-        descriptionKey = "benchmark.output.description",
-        required = false
-    )
-    protected int output = 1;
-    
-    @CommandLine.Option(
-        names = {"-s", "--dicom-store-name"},
-        descriptionKey = "benchmark.dicom-store-name.description",
-        required = true
-    )
-    protected String dicomStoreName;
-    
+  private static IExecutionExceptionHandler createBenchmarkExceptionHandler() {
+    return new IExecutionExceptionHandler() {
+      @Override public int handleExecutionException(Exception e, CommandLine cl, ParseResult pr) {
+        System.err.println(e.getMessage());
+        return CommandLine.ExitCode.SOFTWARE;
+      }
+    };
   }
   
-  // Commands
-  
-  @CommandLine.Command(name = "benchmark", resourceBundle = "cli-messages")
-  static class Benchmark implements Runnable {
-    
-    @CommandLine.Spec
-    private CommandLine.Model.CommandSpec benchmarkSpec;
-    
-    @Override public void run() {
-      benchmarkSpec.commandLine().usage(benchmarkSpec.commandLine().getOut());
-    }
-    
-  }
-  
-  @CommandLine.Command(name = "download-dataset")
-  static class DownloadDatasetCommand extends BenchmarkOptions implements Runnable {
-    
-    @Override public void run() {
-      System.out.println("Downloading dataset: " + dicomStoreName);
-    }
-    
-  }
-  
-  @CommandLine.Command(name = "retrieve-study")
-  static class RetrieveStudyCommand extends BenchmarkOptions implements Runnable {
-    
-    @CommandLine.Option(
-        names = "--study-id",
-        descriptionKey = "benchmark.retrieve-study.study-id.description",
-        required = true
-    )
-    private String studyId;
-    
-    @Override public void run() {
-      System.out.println("Retrieving study: " + studyId);
-    }
-    
-  }
+  /* CLI instance */
+  private static final CommandLine CLI = new CommandLine(new BenchmarkLauncher())
+      .setCommandName("benchmark").setResourceBundle(ResourceBundle.getBundle("cli-messages"))
+      .addSubcommand("help", new HelpCommand())
+      .addSubcommand("download-dataset", new DownloadDatasetBenchmark())
+      .addSubcommand("retrieve-study", new RetrieveStudyBenchmark())
+      .setExecutionExceptionHandler(createBenchmarkExceptionHandler());
   
 }
