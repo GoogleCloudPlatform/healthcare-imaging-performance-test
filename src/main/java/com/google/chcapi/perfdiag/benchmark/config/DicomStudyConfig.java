@@ -12,31 +12,34 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.chcapi.benchmark.routine;
+package com.google.chcapi.perfdiag.benchmark.config;
 
-import java.io.PrintStream;
-
-import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 
-@Command
-public class RetrieveStudyBenchmark extends Benchmark {
+/**
+ * Configuration parameters of DICOM study.
+ * 
+ * @author Mikhail Ukhlin
+ */
+public class DicomStudyConfig extends DicomStoreConfig {
   
+  /**
+   * DICOM study ID.
+   */
   @Option(
-      names = "--study-id",
-      descriptionKey = "benchmark.retrieve-study.study-id.description",
+      names = {"-y", "--dicom-study"},
+      descriptionKey = "option.dicom-study.description",
       required = true
   )
-  private String studyId;
+  private String dicomStudyId;
   
-  @Override
-  protected void doRunBenchmark(int iteration) throws Exception {
-    
-  }
-  
-  @Override
-  protected void doPrintResults(PrintStream output) {
-    output.println("Retrieve study results: TEST");
+  /**
+   * Returns DICOM study ID.
+   * 
+   * @return DICOM study ID.
+   */
+  public String getDicomStudyId() {
+    return dicomStudyId;
   }
   
 }

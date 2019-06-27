@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.chcapi.benchmark.routine;
+package com.google.chcapi.perfdiag.benchmark;
 
 /**
  * Thrown to indicate that an error has occurred at benchmark execution step.
@@ -21,7 +21,7 @@ package com.google.chcapi.benchmark.routine;
  * @see Benchmark
  */
 public class BenchmarkException extends RuntimeException {
-  private static final long serialVersionUID = 2135107338989204856L;
+  private static final long serialVersionUID = -5376779383961136057L;
   
   /**
    * Constructs a new {@code BenchmarkException} with the specified detail message.
@@ -32,27 +32,20 @@ public class BenchmarkException extends RuntimeException {
     super(message);
   }
   
-  /**
-   * Constructs a new {@code BenchmarkException} with the specified detail message and cause.
-   * Detail message will be set as concatenation of the specified detail message and message of
-   * the exception cause.
-   * 
-   * @param message Detail message.
-   * @param cause Exception cause.
-   */
-  public BenchmarkException(String message, Throwable cause) {
-    super(message + (cause.getMessage() != null ? ": " + cause.getMessage() : ""), cause);
+  // Factory methods
+  
+  public static BenchmarkException ioError(Exception cause) {
+    return new BenchmarkException(BenchmarkMessages.format("error.ioError", cause.getMessage()));
   }
   
-  /**
-   * Constructs a new {@code BenchmarkException} with the specified cause. Detail message will be
-   * set to message of the exception cause.
-   * 
-   * @param message Detail message.
-   * @param cause Exception cause.
-   */
-  public BenchmarkException(Throwable cause) {
-    super(cause.getMessage(), cause);
+  public static BenchmarkException authorizationFailed(Exception cause) {
+    return new BenchmarkException(BenchmarkMessages.format("error.authorizationFailed",
+        cause.getMessage()));
+  }
+  
+  public static BenchmarkException iterationFailed(int iteration, Exception cause) {
+    return new BenchmarkException(BenchmarkMessages.format("error.iterationFailed",
+        iteration, cause.getMessage()));
   }
   
 }

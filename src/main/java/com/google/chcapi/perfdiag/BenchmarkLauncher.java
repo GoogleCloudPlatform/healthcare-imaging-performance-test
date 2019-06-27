@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.chcapi.benchmark;
+package com.google.chcapi.perfdiag;
 
 import java.util.ResourceBundle;
 
@@ -22,8 +22,8 @@ import picocli.CommandLine.HelpCommand;
 import picocli.CommandLine.IExecutionExceptionHandler;
 import picocli.CommandLine.ParseResult;
 
-import com.google.chcapi.benchmark.routine.DownloadDatasetBenchmark;
-import com.google.chcapi.benchmark.routine.RetrieveStudyBenchmark;
+import com.google.chcapi.perfdiag.benchmark.DownloadDatasetBenchmark;
+import com.google.chcapi.perfdiag.benchmark.RetrieveStudyBenchmark;
 
 /**
  * The CLI for benchmark DICOM data transmission routines backed by Google Cloud Healthcare API.

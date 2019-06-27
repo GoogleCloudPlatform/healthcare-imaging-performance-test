@@ -12,16 +12,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.chcapi.benchmark.support;
+package com.google.chcapi.perfdiag.benchmark;
 
-import java.net.URI;
+import java.io.PrintStream;
 
-public class HealthcareAPIQueryBuilder {
+import picocli.CommandLine.Command;
+import picocli.CommandLine.Mixin;
+
+import com.google.chcapi.perfdiag.benchmark.config.DicomStudyConfig;
+
+@Command
+public class RetrieveStudyBenchmark extends Benchmark {
   
-  private static final String API_BASE = "https://healthcare.googleapis.com/v1beta1";
+  @Mixin
+  protected DicomStudyConfig dicomStudyConfig;
   
-  public URI build() {
-    return null;
+  @Override
+  protected void runIteration(int iteration, PrintStream output) throws Exception {
+    
+  }
+  
+  @Override
+  protected void printMetrics() {
+    
   }
   
 }
