@@ -17,10 +17,6 @@ package com.google.chcapi.perfdiag.profiler;
 import java.util.List;
 import java.util.Arrays;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.Reader;
-import java.io.InputStreamReader;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 
@@ -31,17 +27,7 @@ import java.net.URLEncoder;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 
-import java.security.GeneralSecurityException;
-
-import com.google.api.client.auth.oauth2.Credential;
-import com.google.api.client.extensions.java6.auth.oauth2.AuthorizationCodeInstalledApp;
-import com.google.api.client.extensions.jetty.auth.oauth2.LocalServerReceiver;
-import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeFlow;
-import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets;
-import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
-import com.google.api.client.http.HttpTransport;
-import com.google.api.client.json.JsonFactory;
-import com.google.api.client.json.jackson2.JacksonFactory;
+import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
 
 import com.google.chcapi.perfdiag.benchmark.config.DicomStoreConfig;
 import com.google.chcapi.perfdiag.benchmark.config.DicomStudyConfig;
@@ -70,57 +56,19 @@ public final class HttpRequestProfilerFactory {
   /**
    * OAuth 2.0 credential.
    */
-  private static Credential credential;
+  private static GoogleCredential credential;
   
   /**
-   * Path to OAuth 2.0 client secrets JSON file.
-   */
-  private static File clientSecrets;
-  
-  /**
-   * Returns path to OAuth 2.0 client secrets JSON file. If path was not set using the
-   * {@link #setClientSecrets(File)} then {@code client_secrets.json} file located in working
-   * directory will be used.
+   * Performs OAuth2 authorization and returns credential. This method uses Application Default
+   * Credentials mechanism.
    * 
-   * @return Path to OAuth 2.0 client secrets JSON file.
-   */
-  public static File getClientSecrets() {
-    if (clientSecrets == null) {
-      clientSecrets = new File("client_secrets.json");
-    }
-    return clientSecrets;
-  }
-  
-  /**
-   * Sets path to OAuth 2.0 client secrets JSON file.
-   * 
-   * @param path Path to OAuth 2.0 client secrets JSON file.
-   */
-  public static void setClientSecrets(File path) {
-    clientSecrets = path; 
-  }
-  
-  /**
-   * Performs OAuth2 authorization and returns credential. This method uses OAuth 2.0 client
-   * secrets JSON file set by the {@link #setClientSecrets(File)} method.
-   * 
-   * @param refresh {@code true} to force access token refresh.
    * @return OAuth 2.0 credential.
    * @throws IOException if an IO error occurred.
-   * @throws GeneralSecurityException if security issue occurred.
    */
-  public static Credential getCredential(boolean refresh)
-      throws IOException, GeneralSecurityException {
-    if (credential == null || refresh) {
-      final JsonFactory factory = JacksonFactory.getDefaultInstance();
-      final HttpTransport transport = GoogleNetHttpTransport.newTrustedTransport();
-      try (Reader input = new InputStreamReader(new FileInputStream(getClientSecrets()))) {
-        final GoogleClientSecrets secrets = GoogleClientSecrets.load(factory, input);
-        final GoogleAuthorizationCodeFlow flow = new GoogleAuthorizationCodeFlow.Builder(
-            transport, factory, secrets, OAUTH_SCOPES).build();
-        credential = new AuthorizationCodeInstalledApp(flow, new LocalServerReceiver())
-            .authorize(null);
-      }
+  public static GoogleCredential getCredential() throws IOException {
+    if (credential == null) {
+      credential = GoogleCredential.getApplicationDefault().createScoped(OAUTH_SCOPES);
+      credential.refreshToken();
     }
     return credential;
   }
@@ -134,7 +82,7 @@ public final class HttpRequestProfilerFactory {
    * @throws IOException if an IO error occurred.
    */
   public static HttpRequestProfiler createListDicomStudiesRequest(DicomStoreConfig config)
-      throws IOException, GeneralSecurityException {
+      throws IOException {
     final URL url = toURL(buildDicomWebURL(config));
     return new HttpRequestProfiler(createHttpGetConnection(url));
   }
@@ -149,7 +97,7 @@ public final class HttpRequestProfilerFactory {
    * @throws IOException if an IO error occurred.
    */
   public static HttpRequestProfiler createRetrieveDicomStudyRequest(DicomStoreConfig config,
-      String studyId) throws IOException, GeneralSecurityException {
+      String studyId) throws IOException {
     final URL url = toURL(buildDicomWebURL(config).append("/").append(encodeURLToken(studyId)));
     return new HttpRequestProfiler(createHttpGetConnection(url));
   }
@@ -163,10 +111,29 @@ public final class HttpRequestProfilerFactory {
    * @throws IOException if an IO error occurred.
    */
   public static HttpRequestProfiler createListDicomStudyInstancesRequest(DicomStudyConfig config)
-      throws IOException, GeneralSecurityException {
+      throws IOException {
     final URL url = toURL(buildDicomWebURL(config)
         .append("/").append(encodeURLToken(config.getDicomStudyId()))
         .append("/instances"));
+    return new HttpRequestProfiler(createHttpGetConnection(url));
+  }
+  
+  /**
+   * Constructs the {@code projects.locations.datasets.dicomStores.studies.series.instances.retrieveInstance}
+   * profiling request for the specified DICOM study configuration, series and instance IDs.
+   * 
+   * @param config DICOM study configuration.
+   * @param seriesId ID of the series.
+   * @param instanceId ID of the instance to retrieve.
+   * @return The {@link HttpRequestProfiler} instance.
+   * @throws IOException if an IO error occurred.
+   */
+  public static HttpRequestProfiler createRetrieveDicomStudyInstanceRequest(DicomStudyConfig config,
+      String seriesId, String instanceId) throws IOException {
+    final URL url = toURL(buildDicomWebURL(config)
+        .append("/").append(encodeURLToken(config.getDicomStudyId()))
+        .append("/series/").append(encodeURLToken(seriesId))
+        .append("/instances/").append(encodeURLToken(instanceId)));
     return new HttpRequestProfiler(createHttpGetConnection(url));
   }
   
@@ -180,8 +147,8 @@ public final class HttpRequestProfilerFactory {
    * @throws IOException if an IO error occurred.
    */
   private static HttpURLConnection createHttpGetConnection(URL url)
-      throws IOException, GeneralSecurityException {
-    final String accessToken = getCredential(false).getAccessToken();
+      throws IOException {
+    final String accessToken = getCredential().getAccessToken();
     final HttpURLConnection connection = (HttpURLConnection) url.openConnection();
     connection.addRequestProperty("Authorization", "Bearer " + accessToken);
     connection.setRequestMethod("GET");

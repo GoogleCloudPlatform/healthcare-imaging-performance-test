@@ -160,6 +160,18 @@ public class HttpRequestProfiler {
         + getBytesRead() + ", " + getTransferRate();
   }
   
+  /**
+   * Returns string representation of this profiling request.
+   * 
+   * @return String representation of this profiling request.
+   */
+  @Override
+  public String toString() {
+    return connection.getURL().toString();
+  }
+
+
+
   /* Constant for empty response content */
   private static final byte[] EMPTY_CONTENT = new byte[0];
   

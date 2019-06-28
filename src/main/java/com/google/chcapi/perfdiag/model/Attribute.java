@@ -14,41 +14,37 @@
 
 package com.google.chcapi.perfdiag.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class DicomAttribute<T> {
-
-  private String vr;
+/**
+ * Describes DICOM attribute.
+ * 
+ * @author Mikhail Ukhlin
+ */
+public class Attribute<T> {
   
-  @JsonProperty
-  private T[] Value;
-
-  public String getVr() {
-    return vr;
-  }
-
-  public void setVr(String vr) {
-    this.vr = vr;
-  }
-
-  public void setValue(T[] Value) {
-    this.Value = Value;
-  }
-
-  @JsonIgnore
-  public T getValue1() {
-    return Value[0];
-  }
-
-  @JsonIgnore
-  public T getValue2() {
-    return Value[1];
-  }
-
-  @JsonIgnore
+  /**
+   * DICOM attribute values.
+   */
+  @JsonProperty("Value")
+  private T[] value;
+  
+  /**
+   * Returns values of DICOM attribute as an array.
+   * 
+   * @return Values of DICOM attribute as an array.
+   */
   public T[] getValue() {
-    return Value;
+    return value;
   }
-
+  
+  /**
+   * Returns first value of DICOM attribute or {@code null} if not available.
+   * 
+   * @return First value of DICOM attribute.
+   */
+  public T getFirstValue() {
+    return value == null || value.length == 0 ? null : value[0];
+  }
+  
 }

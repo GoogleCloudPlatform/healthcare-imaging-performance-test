@@ -21,7 +21,7 @@ package com.google.chcapi.perfdiag.benchmark;
  * @see Benchmark
  */
 public class BenchmarkException extends RuntimeException {
-  private static final long serialVersionUID = -5376779383961136057L;
+  private static final long serialVersionUID = 3569311908883665301L;
   
   /**
    * Constructs a new {@code BenchmarkException} with the specified detail message.
@@ -34,15 +34,34 @@ public class BenchmarkException extends RuntimeException {
   
   // Factory methods
   
+  /**
+   * Creates {@code BenchmarkException} instance with IO error detail message.
+   * 
+   * @param cause Exception cause.
+   * @return {@code BenchmarkException} instance with IO error detail message.
+   */
   public static BenchmarkException ioError(Exception cause) {
     return new BenchmarkException(BenchmarkMessages.format("error.ioError", cause.getMessage()));
   }
   
+  /**
+   * Creates {@code BenchmarkException} instance with authorization failure error detail message.
+   * 
+   * @param cause Exception cause.
+   * @return {@code BenchmarkException} instance with authorization failure error detail message.
+   */
   public static BenchmarkException authorizationFailed(Exception cause) {
     return new BenchmarkException(BenchmarkMessages.format("error.authorizationFailed",
         cause.getMessage()));
   }
   
+  /**
+   * Creates {@code BenchmarkException} instance with iteration failure error detail message.
+   * 
+   * @param iteration Number of failed iteration. 
+   * @param cause Exception cause.
+   * @return {@code BenchmarkException} instance with authorization error detail message.
+   */
   public static BenchmarkException iterationFailed(int iteration, Exception cause) {
     return new BenchmarkException(BenchmarkMessages.format("error.iterationFailed",
         iteration, cause.getMessage()));

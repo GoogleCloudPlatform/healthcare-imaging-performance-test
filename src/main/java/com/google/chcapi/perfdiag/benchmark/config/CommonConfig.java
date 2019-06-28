@@ -46,16 +46,6 @@ public class CommonConfig {
   private File outputFile = null;
   
   /**
-   * File that contains OAuth 2.0 client secrets in JSON format.
-   */
-  @Option(
-      names = {"-c", "--credential"},
-      descriptionKey = "option.credential.description",
-      required = false
-  )
-  private File clientSecretsFile = null;
-  
-  /**
    * Returns number of iterations the routine is executed.
    * 
    * @return Number of iterations the routine is executed.
@@ -71,16 +61,6 @@ public class CommonConfig {
    */
   public File getOutputFile() {
     return outputFile;
-  }
-  
-  /**
-   * Returns file that contains OAuth 2.0 client secrets in JSON format or {@code null} if not
-   * provided.
-   * 
-   * @return File that contains OAuth 2.0 client secrets in JSON format.
-   */
-  public File getClientSecretsFile() {
-    return clientSecretsFile;
   }
   
 }

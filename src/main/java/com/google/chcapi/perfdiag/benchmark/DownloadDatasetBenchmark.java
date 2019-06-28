@@ -14,24 +14,35 @@
 
 package com.google.chcapi.perfdiag.benchmark;
 
-import java.io.PrintStream;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.ArrayList;
 import java.util.concurrent.Future;
-import picocli.CommandLine.Command;
+import java.util.concurrent.Callable;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ExecutorService;
+
+import java.io.PrintStream;
+
 import picocli.CommandLine.Mixin;
+import picocli.CommandLine.Command;
+
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.chcapi.perfdiag.benchmark.config.DicomStoreConfig;
+
 import com.google.chcapi.perfdiag.model.Study;
+import com.google.chcapi.perfdiag.benchmark.config.DicomStoreConfig;
 import com.google.chcapi.perfdiag.profiler.HttpRequestProfiler;
 import com.google.chcapi.perfdiag.profiler.HttpRequestProfilerFactory;
 import com.google.chcapi.perfdiag.profiler.HttpRequestStatistics;
 
+/**
+ * This benchmark shows the user how fast it is to download a large dataset (a whole dicom store).
+ * It involves sending requests to get study information (QIDO) and sending paralleled requests to
+ * retrieve all studies in the dicom store (WADO).
+ * 
+ * @author Mikhail Ukhlin
+ */
 @Command
 public class DownloadDatasetBenchmark extends Benchmark {
   
@@ -59,15 +70,18 @@ public class DownloadDatasetBenchmark extends Benchmark {
     // Create separate task for each study
     final List<Callable<HttpRequestProfiler>> tasks = new ArrayList<>();
     for (Study study : studies) {
-      final String studyId = study.getStudyInstanceUID().getValue1();
-      tasks.add(new Callable<HttpRequestProfiler>() {
-        @Override public HttpRequestProfiler call() throws Exception {
-          final HttpRequestProfiler request =
-              HttpRequestProfilerFactory.createRetrieveDicomStudyRequest(dicomStoreConfig, studyId);
-          request.execute();
-          return request;
-        }
-      });
+      final String studyId = study.getStudyUID();
+      if (studyId != null) {
+        tasks.add(new Callable<HttpRequestProfiler>() {
+          @Override public HttpRequestProfiler call() throws Exception {
+            final HttpRequestProfiler request =
+                HttpRequestProfilerFactory.createRetrieveDicomStudyRequest(dicomStoreConfig, studyId);
+            final int length = request.execute().length;
+            printRequestExecuted(request, length);
+            return request;
+          }
+        });
+      }
     }
     
     // Wait for completion and update statistics

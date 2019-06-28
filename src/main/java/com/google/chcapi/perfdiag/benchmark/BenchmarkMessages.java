@@ -87,6 +87,24 @@ public abstract class BenchmarkMessages {
   }
   
   /**
+   * Prints message about number of found study instances to stdout.
+   * 
+   * @param count Number of found study instances.
+   */
+  public static void printInstancesFound(int count) {
+    print("message.instancesFound", count);
+  }
+  
+  /**
+   * Prints request executed message to stdout.
+   * 
+   * @param length Bytes read.
+   */
+  public static void printRequestExecuted(HttpRequestProfiler request, int length) {
+    print("message.requestExecuted", length, request);
+  }
+  
+  /**
    * Prints statistics of the specified profilig request to stdout.
    * 
    * @param request Profiling request.

@@ -24,15 +24,27 @@ import com.google.chcapi.perfdiag.benchmark.config.CommonConfig;
 import com.google.chcapi.perfdiag.profiler.HttpRequestProfilerFactory;
 
 /**
- * 
+ * Base abstract class for benchmarks. Subclasses should implement two methods:
+ * <ul>
+ *   <li>{@link #runIteration(int, PrintStream)} which is invoked for each benchmark iteration.</li>
+ *   <li>{@link #printMetrics()} which is invoked after all benchmark iterations.</li>
+ * </ul>
  * 
  * @author Mikhail Ukhlin
+ * @see RetrieveStudyBenchmark
+ * @see DownloadDatasetBenchmark
  */
 public abstract class Benchmark extends BenchmarkMessages implements Runnable {
   
+  /**
+   * Common benchmark configuration from command line.
+   */
   @Mixin
   protected CommonConfig commonConfig;
   
+  /**
+   * Benchmark entry point.
+   */
   @Override
   public void run() {
     authorize();
@@ -42,16 +54,26 @@ public abstract class Benchmark extends BenchmarkMessages implements Runnable {
   
   /**
    * Acquires access token before benchmark execution.
+   * 
+   * @throws BenchmarkException if an error occurred.
+   * @see HttpRequestProfilerFactory#getCredential()
    */
   private void authorize() {
     try {
-      HttpRequestProfilerFactory.setClientSecrets(commonConfig.getClientSecretsFile());
-      HttpRequestProfilerFactory.getCredential(true);
+      HttpRequestProfilerFactory.getCredential();
     } catch (Exception e) {
       throw BenchmarkException.authorizationFailed(e);
     }
   }
   
+  /**
+   * Executes benchmark. This method just invokes {@link #runIterations(PrintStream)} and provides
+   * output stream depending on {@code --output} command line option.
+   * 
+   * @throws BenchmarkException if an error occurred.
+   * @see #runIterations(PrintStream)
+   * @see CommonConfig#getOutputFile()
+   */
   private void executeBenchmark() {
     final File outputFile = commonConfig.getOutputFile();
     if (outputFile == null) {
@@ -67,6 +89,15 @@ public abstract class Benchmark extends BenchmarkMessages implements Runnable {
     }
   }
   
+  /**
+   * Runs benchmark iterations one by one invoking the {@link #runIteration(int, PrintStream)}
+   * method. The number of iterations is specified by the {@code --iterations} command line option.
+   * 
+   * @param output Output stream to write metrics.
+   * @throws BenchmarkException if an error occurred.
+   * @see #runIteration(int, PrintStream)
+   * @see CommonConfig#getIterations()
+   */
   private void runIterations(PrintStream output) {
     for (int i = 0; i < commonConfig.getIterations(); i++) {
       try {
@@ -79,8 +110,19 @@ public abstract class Benchmark extends BenchmarkMessages implements Runnable {
     printBenchmarkCompleted();
   }
   
+  /**
+   * Runs benchmark iteration and writes metrics to the specified output stream.
+   * 
+   * @param iteration Iteration number.
+   * @param output Output stream to write metrics.
+   * @throws Exception if an error occurred.
+   */
   protected abstract void runIteration(int iteration, PrintStream output) throws Exception;
   
+  /**
+   * Prints aggregated metrics to stdout include median, mean and percentiles calculated from the
+   * raw data when all iterations are done.
+   */
   protected abstract void printMetrics();
   
 }
