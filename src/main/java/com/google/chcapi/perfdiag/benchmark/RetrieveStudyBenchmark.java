@@ -22,9 +22,12 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
 
 import java.io.PrintStream;
+import java.io.ByteArrayOutputStream;
 
 import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Command;
+
+import org.apache.commons.io.output.NullOutputStream;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -34,7 +37,8 @@ import com.google.chcapi.perfdiag.model.Instance;
 import com.google.chcapi.perfdiag.benchmark.config.DicomStudyConfig;
 import com.google.chcapi.perfdiag.profiler.HttpRequestProfiler;
 import com.google.chcapi.perfdiag.profiler.HttpRequestProfilerFactory;
-import com.google.chcapi.perfdiag.profiler.HttpRequestStatistics;
+import com.google.chcapi.perfdiag.profiler.HttpRequestMetrics;
+import com.google.chcapi.perfdiag.profiler.HttpRequestAggregates;
 
 /**
  * This benchmark shows how fast it can be to retrieve a whole study with Google Cloud Healthcare
@@ -55,7 +59,7 @@ public class RetrieveStudyBenchmark extends Benchmark {
   /**
    * Aggregated statistics for retrieve study instance requests.
    */
-  private final HttpRequestStatistics retrieveInstanceStats = new HttpRequestStatistics();
+  private final HttpRequestAggregates retrieveInstanceStats = new HttpRequestAggregates();
   
   /**
    * Thread pool.
@@ -68,30 +72,30 @@ public class RetrieveStudyBenchmark extends Benchmark {
     final List<Instance> instances = fetchStudyInstances();
     
     // Create separate task for each study instance
-    final List<Callable<HttpRequestProfiler>> tasks = new ArrayList<>();
+    final List<Callable<HttpRequestMetrics>> tasks = new ArrayList<>();
     for (Instance instance : instances) {
       final String seriesId = instance.getSeriesUID();
       final String instanceId = instance.getInstanceUID();
       if (!(seriesId == null || instanceId == null)) {
-        tasks.add(new Callable<HttpRequestProfiler>() {
-          @Override public HttpRequestProfiler call() throws Exception {
+        tasks.add(new Callable<HttpRequestMetrics>() {
+          @Override public HttpRequestMetrics call() throws Exception {
             final HttpRequestProfiler request =
                 HttpRequestProfilerFactory.createRetrieveDicomStudyInstanceRequest(dicomStudyConfig,
                     seriesId, instanceId);
-            final int length = request.execute().length;
-            printRequestExecuted(request, length);
-            return request;
+            final HttpRequestMetrics metrics = request.execute(NullOutputStream.NULL_OUTPUT_STREAM);
+            printRequestExecuted(request, metrics.getBytesRead());
+            return metrics;
           }
         });
       }
     }
     
     // Wait for completion and update statistics
-    for (Future<HttpRequestProfiler> future : pool.invokeAll(tasks)) {
+    for (Future<HttpRequestMetrics> future : pool.invokeAll(tasks)) {
       try {
-        final HttpRequestProfiler request = future.get();
-        output.println(request.toCSVString(iteration));
-        retrieveInstanceStats.addProfile(request);
+        final HttpRequestMetrics metrics = future.get();
+        output.println(metrics.toCSVString(iteration));
+        retrieveInstanceStats.addProfile(metrics);
       } catch (Exception e) {
         printRequestFailed(e);
       }
@@ -106,10 +110,11 @@ public class RetrieveStudyBenchmark extends Benchmark {
   private List<Instance> fetchStudyInstances() throws Exception {
     final HttpRequestProfiler request =
         HttpRequestProfilerFactory.createListDicomStudyInstancesRequest(dicomStudyConfig);
-    final List<Instance> instances = MAPPER.readValue(request.execute(),
+    final ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+    final HttpRequestMetrics metrics = request.execute(buffer);
+    final List<Instance> instances = MAPPER.readValue(buffer.toByteArray(),
         new TypeReference<List<Instance>>() {});
-    printInstancesFound(instances.size());
-    printStatistics(request);
+    printInstancesFound(instances.size(), metrics.getTotalLatency());
     return instances;
   }
   

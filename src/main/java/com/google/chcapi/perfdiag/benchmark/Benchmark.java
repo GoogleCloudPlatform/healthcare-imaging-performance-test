@@ -56,11 +56,11 @@ public abstract class Benchmark extends BenchmarkMessages implements Runnable {
    * Acquires access token before benchmark execution.
    * 
    * @throws BenchmarkException if an error occurred.
-   * @see HttpRequestProfilerFactory#getCredential()
+   * @see HttpRequestProfilerFactory#CREDENTIAL
    */
   private void authorize() {
     try {
-      HttpRequestProfilerFactory.getCredential();
+      HttpRequestProfilerFactory.CREDENTIAL.refreshToken();
     } catch (Exception e) {
       throw BenchmarkException.authorizationFailed(e);
     }
@@ -99,7 +99,9 @@ public abstract class Benchmark extends BenchmarkMessages implements Runnable {
    * @see CommonConfig#getIterations()
    */
   private void runIterations(PrintStream output) {
-    for (int i = 0; i < commonConfig.getIterations(); i++) {
+    final int iterations = commonConfig.getIterations();
+    printBenchmarkStarted(iterations);
+    for (int i = 0; i < iterations; i++) {
       try {
         printIterationStarted(i);
         runIteration(i, output);

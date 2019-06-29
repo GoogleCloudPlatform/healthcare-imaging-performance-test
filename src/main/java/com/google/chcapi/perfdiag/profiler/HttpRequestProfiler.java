@@ -14,150 +14,105 @@
 
 package com.google.chcapi.perfdiag.profiler;
 
-import java.util.Arrays;
-
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.IOException;
 
-import java.net.HttpURLConnection;
+import org.apache.commons.io.IOUtils;
+
+import org.apache.http.HttpStatus;
+import org.apache.http.client.HttpResponseException;
+import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.impl.client.CloseableHttpClient;
+
 
 /**
- * Wrapper around {@code HttpURLConnection} that allows to make HTTP request, read response and
- * store metrics (response latency, read latency, bytes read and transfer rate).
+ * HTTP request wrapper that allows to execute request, read response and store metrics (response
+ * latency, read latency and number of bytes read).
  * 
  * @author Mikhail Ukhlin
  * @see HttpRequestProfilerFactory
  */
 public class HttpRequestProfiler {
   
-  /**
-   * HTTP connection prepared for request to Google Cloud Healthcare API.
-   */
-  private final HttpURLConnection connection;
+  /* HTTP client instance */
+  private static final CloseableHttpClient HTTP_CLIENT = HttpClients.createDefault();
   
   /**
-   * Latency of first byte received in milliseconds.
+   * Prepared HTTP request.
    */
-  private long responseLatency;
+  private final HttpUriRequest request;
   
   /**
-   * Latency of all bytes received in milliseconds.
-   */
-  private long readLatency;
-  
-  /**
-   * Bytes read.
-   */
-  private long bytesRead;
-  
-  /**
-   * Constructs a new {@code HttpRequestProfiler} with the specified HTTP connection.
+   * Constructs a new {@code HttpRequestProfiler} with the specified HTTP request.
    * 
-   * @param connection The {@code HttpURLConnection} instance prepared for request.
+   * @param request Prepared HTTP request instance.
    */
-  public HttpRequestProfiler(HttpURLConnection connection) {
-    this.connection = connection;
+  public HttpRequestProfiler(HttpUriRequest request) {
+    this.request = request;
   }
   
   /**
-   * Returns latency of first byte received in milliseconds.
+   * Executes HTTP request and returns request metrics. GCP authorization is done if the user is
+   * not already signed in. The access token is refreshed if it has expired (HTTP 401 is returned
+   * from the server) and the request is retried with the new access token.
    * 
-   * @return Latency of first byte received in milliseconds.
-   */
-  public long getResponseLatency() {
-    return responseLatency;
-  }
-  
-  /**
-   * Returns latency of all bytes received in milliseconds.
-   * 
-   * @return Latency of all bytes received in milliseconds.
-   */
-  public long getReadLatency() {
-    return readLatency;
-  }
-  
-  /**
-   * Returns bytes read.
-   * 
-   * @return Bytes read.
-   */
-  public long getBytesRead() {
-    return bytesRead;
-  }
-  
-  /**
-   * Returns bytes read per second.
-   * 
-   * @return Bytes read per second.
-   */
-  public double getTransferRate() {
-    return readLatency > 0L ? (double) bytesRead / (double) readLatency * 1000.0 : 0.0;
-  }
-  
-  /**
-   * Profiles HTTP request and stores results.
-   * 
-   * @return Content of HTTP response as array of bytes.
+   * @param buffer Buffer to store response content.
+   * @return Metrics of the HTTP request.
    * @throws IOException if an IO error occurred or request failed.
    */
-  public byte[] execute() throws IOException {
-    // Send request and measure latency
-    final long startTime = System.currentTimeMillis();
-    connection.getInputStream();
-    final long responseTime = System.currentTimeMillis();
-    
-    // Check status code
-    int status = connection.getResponseCode();
-    if (status < HttpURLConnection.HTTP_OK || status >= HttpURLConnection.HTTP_MULT_CHOICE) {
-      final String message = connection.getResponseMessage();
-      throw new IOException(message != null ? status + " " + message : Integer.toString(status));
-    }
-    
-    // Read content if any
-    byte[] content = status == HttpURLConnection.HTTP_NO_CONTENT ? EMPTY_CONTENT : readContent();
-    responseLatency = responseTime - startTime;
-    return content;
-  }
-  
-  /**
-   * Reads content of HTTP response and assigns {@link #readLatency} and {@link #bytesRead} fields.
-   * This method takes into account {@code Content-Length} HTTP header for optimal performance.
-   * 
-   * @return Content of HTTP response as array of bytes.
-   * @throws IOException if an IO error occurred.
-   */
-  private byte[] readContent() throws IOException {
-    final int length = connection.getContentLength();
-    if (length == 0) {
-      return EMPTY_CONTENT;
-    } else {
-      int offset = 0;
-      final int blockSize = Math.max(length, DEFAULT_BLOCK_SIZE);
-      byte[] content = new byte[blockSize];
-      final long timestamp = System.currentTimeMillis();
-      try (InputStream input = connection.getInputStream()) {
-        for (int count; (count = input.read(content, offset, blockSize)) >= 0; offset += count) {
-          if (offset + count + blockSize > content.length) {
-            content = Arrays.copyOf(content, content.length * 3 / 2 + 1);
-          }
+  public HttpRequestMetrics execute(OutputStream buffer) throws IOException {
+    try {
+      return doExecute(buffer);
+    } catch (HttpResponseException e) {
+      // Token expired?
+      if (e.getStatusCode() == HttpStatus.SC_UNAUTHORIZED) {
+        // Refresh token and try again
+        if (HttpRequestProfilerFactory.CREDENTIAL.refreshToken()) {
+          return doExecute(buffer);
         }
       }
-      readLatency = System.currentTimeMillis() - timestamp;
-      return (bytesRead = offset) < content.length ? Arrays.copyOf(content, offset) : content;
+      // Rethrow exception
+      throw e;
     }
   }
   
   /**
-   * Return CSV string concatenated using request metrics in the following format:
-   * {@code ITERATION, RESPONSE LATENCY, READ LATENCY, BYTES READ, TRANSFER RATE}.
+   * Executes HTTP request and returns request metrics.
    * 
-   * @param iteration The benchmark iteration number.
-   * @return CSV string concatenated using request metrics.
+   * @param buffer Buffer to store response content.
+   * @return Metrics of the HTTP request.
+   * @throws IOException if an IO error occurred or request failed.
    */
-  public String toCSVString(int iteration) {
-    return iteration + ", " + getResponseLatency() + ", " + getReadLatency() + ", "
-        + getBytesRead() + ", " + getTransferRate();
+  private HttpRequestMetrics doExecute(OutputStream buffer) throws IOException {
+    // Execute request and measure metrics
+    long timestamp = System.currentTimeMillis();
+    try (CloseableHttpResponse response = HTTP_CLIENT.execute(request)) {
+      final long responseLatency = System.currentTimeMillis() - timestamp;
+      
+      // Check status code
+      final int status = response.getStatusLine().getStatusCode();
+      if (status < HttpStatus.SC_OK || status >= HttpStatus.SC_MULTIPLE_CHOICES) {
+        // Request failed
+        throw new HttpResponseException(status, response.getStatusLine().getReasonPhrase());
+      }
+      
+      // Does content exist?
+      if (status == HttpStatus.SC_NO_CONTENT) {
+        // No content
+        return new HttpRequestMetrics(responseLatency, 0L, 0L);
+      }
+      
+      // Read content
+      timestamp = System.currentTimeMillis();
+      try (InputStream input = response.getEntity().getContent()) {
+        final long bytesRead = IOUtils.copyLarge(response.getEntity().getContent(), buffer);
+        final long readLatency = System.currentTimeMillis() - timestamp;
+        return new HttpRequestMetrics(responseLatency, readLatency, bytesRead);
+      }
+    }
   }
   
   /**
@@ -167,15 +122,7 @@ public class HttpRequestProfiler {
    */
   @Override
   public String toString() {
-    return connection.getURL().toString();
+    return request.getURI().toString();
   }
-
-
-
-  /* Constant for empty response content */
-  private static final byte[] EMPTY_CONTENT = new byte[0];
-  
-  /* Default size of blocks used to read response content */
-  private static final int DEFAULT_BLOCK_SIZE = 8192;
   
 }

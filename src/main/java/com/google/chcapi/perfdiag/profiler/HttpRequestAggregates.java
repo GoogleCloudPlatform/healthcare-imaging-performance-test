@@ -15,32 +15,33 @@
 package com.google.chcapi.perfdiag.profiler;
 
 /**
- * Aggregated statistics for multiple HTTP requests.
+ * Aggregated metrics of multiple HTTP requests.
  * 
  * @author Mikhail Ukhlin
  * @see HttpRequestProfiler
+ * @see HttpRequestMetrics
  */
-public class HttpRequestStatistics {
+public class HttpRequestAggregates {
   
   /**
    * Number of measured requests.
    */
-  private int requestCount;
+  private volatile int requestCount;
   
   /**
    * Total latency of first byte received in milliseconds.
    */
-  private long totalResponseLatency;
+  private volatile long totalResponseLatency;
   
   /**
    * Total latency of all bytes received in milliseconds.
    */
-  private long totalReadLatency;
+  private volatile long totalReadLatency;
   
   /**
    * Total bytes read.
    */
-  private long totalBytesRead;
+  private volatile long totalBytesRead;
   
   /**
    * Returns number of measured requests.
@@ -88,6 +89,24 @@ public class HttpRequestStatistics {
   }
   
   /**
+   * Returns total latency in milliseconds.
+   * 
+   * @return Total latency in milliseconds.
+   */
+  public long getTotalLatency() {
+    return totalResponseLatency + totalReadLatency;
+  }
+  
+  /**
+   * Returns average latency in milliseconds.
+   * 
+   * @return Average latency in milliseconds.
+   */
+  public long getAverageLatency() {
+    return requestCount > 0 ? (totalResponseLatency + totalReadLatency) / requestCount : 0L;
+  }
+  
+  /**
    * Returns total bytes read.
    * 
    * @return Total bytes read.
@@ -106,14 +125,14 @@ public class HttpRequestStatistics {
   }
   
   /**
-   * Adds measurements from the specified HTTP profiling request.
+   * Adds the specified HTTP request metrics.
    * 
-   * @param request Measurements of HTTP profiling request to add.
+   * @param metrics HTTP request metrics to add.
    */
-  public void addProfile(HttpRequestProfiler request) {
-    totalResponseLatency += request.getResponseLatency();
-    totalReadLatency += request.getReadLatency();
-    totalBytesRead += request.getBytesRead();
+  public void addProfile(HttpRequestMetrics metrics) {
+    totalResponseLatency += metrics.getResponseLatency();
+    totalReadLatency += metrics.getReadLatency();
+    totalBytesRead += metrics.getBytesRead();
     requestCount++;
   }
   

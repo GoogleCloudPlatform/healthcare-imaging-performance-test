@@ -14,7 +14,6 @@
 
 package com.google.chcapi.perfdiag.profiler;
 
-import java.util.List;
 import java.util.Arrays;
 
 import java.io.IOException;
@@ -22,10 +21,10 @@ import java.io.UnsupportedEncodingException;
 
 import java.nio.charset.StandardCharsets;
 
-import java.net.URL;
 import java.net.URLEncoder;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
+
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpUriRequest;
 
 import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
 
@@ -45,33 +44,22 @@ public final class HttpRequestProfilerFactory {
     throw new IllegalAccessError();
   }
   
+  /**
+   * OAuth 2.0 credential obtained using Google Application Default Credentials mechanism.
+   */
+  public static final GoogleCredential CREDENTIAL;
+  static {
+    try {
+      CREDENTIAL = GoogleCredential.getApplicationDefault().createScoped(Arrays.asList(
+          "https://www.googleapis.com/auth/cloud-healthcare",
+          "https://www.googleapis.com/auth/cloudplatformprojects.readonly"));
+    } catch (IOException e) {
+      throw new IllegalStateException(e.getMessage());
+    }
+  }
+  
   /* Root URL of Google Cloud Healthcare API */
   private static final String API_ROOT_URL = "https://healthcare.googleapis.com/v1beta1";
-  
-  /* OAuth 2.0 scopes */
-  private static final List<String> OAUTH_SCOPES = Arrays.asList(
-      "https://www.googleapis.com/auth/cloud-healthcare",
-      "https://www.googleapis.com/auth/cloudplatformprojects.readonly");
-  
-  /**
-   * OAuth 2.0 credential.
-   */
-  private static GoogleCredential credential;
-  
-  /**
-   * Performs OAuth2 authorization and returns credential. This method uses Application Default
-   * Credentials mechanism.
-   * 
-   * @return OAuth 2.0 credential.
-   * @throws IOException if an IO error occurred.
-   */
-  public static GoogleCredential getCredential() throws IOException {
-    if (credential == null) {
-      credential = GoogleCredential.getApplicationDefault().createScoped(OAUTH_SCOPES);
-      credential.refreshToken();
-    }
-    return credential;
-  }
   
   /**
    * Constructs the {@code projects.locations.datasets.dicomStores.searchForStudies}
@@ -79,12 +67,11 @@ public final class HttpRequestProfilerFactory {
    * 
    * @param config DICOM store configuration.
    * @return The {@link HttpRequestProfiler} instance.
-   * @throws IOException if an IO error occurred.
    */
-  public static HttpRequestProfiler createListDicomStudiesRequest(DicomStoreConfig config)
-      throws IOException {
-    final URL url = toURL(buildDicomWebURL(config));
-    return new HttpRequestProfiler(createHttpGetConnection(url));
+  public static HttpRequestProfiler createListDicomStudiesRequest(DicomStoreConfig config) {
+    return new HttpRequestProfiler(createHttpGetRequest(
+        buildDicomWebURI(config)
+        .toString()));
   }
   
   /**
@@ -94,12 +81,13 @@ public final class HttpRequestProfilerFactory {
    * @param config DICOM store configuration.
    * @param studyId ID of the study to retrieve.
    * @return The {@link HttpRequestProfiler} instance.
-   * @throws IOException if an IO error occurred.
    */
   public static HttpRequestProfiler createRetrieveDicomStudyRequest(DicomStoreConfig config,
-      String studyId) throws IOException {
-    final URL url = toURL(buildDicomWebURL(config).append("/").append(encodeURLToken(studyId)));
-    return new HttpRequestProfiler(createHttpGetConnection(url));
+      String studyId) {
+    return new HttpRequestProfiler(createHttpGetRequest(
+        buildDicomWebURI(config)
+        .append("/").append(encodeURIToken(studyId))
+        .toString()));
   }
   
   /**
@@ -108,14 +96,13 @@ public final class HttpRequestProfilerFactory {
    * 
    * @param config DICOM study configuration.
    * @return The {@link HttpRequestProfiler} instance.
-   * @throws IOException if an IO error occurred.
    */
-  public static HttpRequestProfiler createListDicomStudyInstancesRequest(DicomStudyConfig config)
-      throws IOException {
-    final URL url = toURL(buildDicomWebURL(config)
-        .append("/").append(encodeURLToken(config.getDicomStudyId()))
-        .append("/instances"));
-    return new HttpRequestProfiler(createHttpGetConnection(url));
+  public static HttpRequestProfiler createListDicomStudyInstancesRequest(DicomStudyConfig config) {
+    return new HttpRequestProfiler(createHttpGetRequest(
+        buildDicomWebURI(config)
+        .append("/").append(encodeURIToken(config.getDicomStudyId()))
+        .append("/instances")
+        .toString()));
   }
   
   /**
@@ -126,76 +113,54 @@ public final class HttpRequestProfilerFactory {
    * @param seriesId ID of the series.
    * @param instanceId ID of the instance to retrieve.
    * @return The {@link HttpRequestProfiler} instance.
-   * @throws IOException if an IO error occurred.
    */
   public static HttpRequestProfiler createRetrieveDicomStudyInstanceRequest(DicomStudyConfig config,
-      String seriesId, String instanceId) throws IOException {
-    final URL url = toURL(buildDicomWebURL(config)
-        .append("/").append(encodeURLToken(config.getDicomStudyId()))
-        .append("/series/").append(encodeURLToken(seriesId))
-        .append("/instances/").append(encodeURLToken(instanceId)));
-    return new HttpRequestProfiler(createHttpGetConnection(url));
+      String seriesId, String instanceId) {
+    return new HttpRequestProfiler(createHttpGetRequest(
+        buildDicomWebURI(config)
+        .append("/").append(encodeURIToken(config.getDicomStudyId()))
+        .append("/series/").append(encodeURIToken(seriesId))
+        .append("/instances/").append(encodeURIToken(instanceId))
+        .toString()));
   }
   
-  // Utility
-  
   /**
-   * Constructs a new {@code HttpURLConnection} prepared for HTTP GET request for the specified URL.
+   * Constructs a new HTTP GET request for the specified URI.
    * 
-   * @param url The HTTP request URL.
-   * @return A new {@code HttpURLConnection} prepared for HTTP GET request.
-   * @throws IOException if an IO error occurred.
+   * @param uri The HTTP request URI.
+   * @return A new prepared HTTP GET request instance.
    */
-  private static HttpURLConnection createHttpGetConnection(URL url)
-      throws IOException {
-    final String accessToken = getCredential().getAccessToken();
-    final HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-    connection.addRequestProperty("Authorization", "Bearer " + accessToken);
-    connection.setRequestMethod("GET");
-    connection.setDoOutput(false);
-    return connection;
+  private static HttpUriRequest createHttpGetRequest(String uri) {
+    final HttpGet request = new HttpGet(uri);
+    request.setHeader("Authorization", "Bearer " + CREDENTIAL.getAccessToken());
+    return request;
   }
   
   /**
-   * Constructs DICOM Web request URL using parameters from the specified DICOM store configuration.
+   * Constructs DICOM Web request URI using parameters from the specified DICOM store configuration.
    * 
    * @param config DICOM store configuration.
-   * @return DICOM Web request URL as {@code StringBuilder} instance for further URL construction.
+   * @return DICOM Web request URI as {@code StringBuilder} instance for further URI construction.
    */
-  private static StringBuilder buildDicomWebURL(DicomStoreConfig config) {
+  private static StringBuilder buildDicomWebURI(DicomStoreConfig config) {
     return new StringBuilder(API_ROOT_URL)
-        .append("/projects/").append(encodeURLToken(config.getProjectId()))
-        .append("/locations/").append(encodeURLToken(config.getLocationId()))
-        .append("/datasets/").append(encodeURLToken(config.getDatasetId()))
-        .append("/dicomStores/").append(encodeURLToken(config.getDicomStoreId()))
+        .append("/projects/").append(encodeURIToken(config.getProjectId()))
+        .append("/locations/").append(encodeURIToken(config.getLocationId()))
+        .append("/datasets/").append(encodeURIToken(config.getDatasetId()))
+        .append("/dicomStores/").append(encodeURIToken(config.getDicomStoreId()))
         .append("/dicomWeb/studies");
   }
   
   /**
-   * Encodes the specified token to be used in URL address.
+   * Encodes the specified token to be used in URI address.
    * 
    * @param token The token to encode.
-   * @return Encoded token to be used in URL address.
+   * @return Encoded token to be used in URI address.
    */
-  private static String encodeURLToken(String token) {
+  private static String encodeURIToken(String token) {
     try {
       return URLEncoder.encode(token, StandardCharsets.UTF_8.name());
     } catch (UnsupportedEncodingException e) {
-      // Should never happen
-      throw new IllegalStateException(e);
-    }
-  }
-  
-  /**
-   * Constructs an {@code URL} instance for the specified string.
-   * 
-   * @param url The {@code StringBuilder} instance that contains URL in a string form.
-   * @return An {@code URL} instance for the specified string.
-   */
-  private static URL toURL(StringBuilder url) {
-    try {
-      return new URL(url.toString());
-    } catch (MalformedURLException e) {
       // Should never happen
       throw new IllegalStateException(e);
     }

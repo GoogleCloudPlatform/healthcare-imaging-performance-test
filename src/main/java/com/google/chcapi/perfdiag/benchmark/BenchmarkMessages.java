@@ -16,7 +16,8 @@ package com.google.chcapi.perfdiag.benchmark;
 
 import java.util.ResourceBundle;
 import com.google.chcapi.perfdiag.profiler.HttpRequestProfiler;
-import com.google.chcapi.perfdiag.profiler.HttpRequestStatistics;
+import com.google.chcapi.perfdiag.profiler.HttpRequestAggregates;
+import com.google.chcapi.perfdiag.profiler.HttpRequestMetrics;
 
 /**
  * Helper class used to format and print benchmark messages from resource bundle.
@@ -62,7 +63,14 @@ public abstract class BenchmarkMessages {
   }
   
   /**
-   * Prints message about benchmark iteration start to stdout.
+   * Prints benchmark started message to stdout.
+   */
+  public static void printBenchmarkStarted(int iterations) {
+    print("message.benchmarkStarted", iterations);
+  }
+  
+  /**
+   * Prints benchmark iteration started message to stdout.
    * 
    * @param iteration The iteration number.
    */
@@ -71,28 +79,30 @@ public abstract class BenchmarkMessages {
   }
   
   /**
-   * Prints message about benchmark completion to stdout.
+   * Prints benchmark completed message to stdout.
    */
   public static void printBenchmarkCompleted() {
     print("message.benchmarkCompleted");
   }
   
   /**
-   * Prints message about number of found studies to stdout.
+   * Prints studies found message to stdout.
    * 
    * @param count Number of found studies.
+   * @param latency Latency of query studies.
    */
-  public static void printStudiesFound(int count) {
-    print("message.stadiesFound", count);
+  public static void printStudiesFound(int count, long latency) {
+    print("message.stadiesFound", count, latency);
   }
   
   /**
-   * Prints message about number of found study instances to stdout.
+   * Prints study instances found message to stdout.
    * 
    * @param count Number of found study instances.
+   * @param latency Latency of query study instances.
    */
-  public static void printInstancesFound(int count) {
-    print("message.instancesFound", count);
+  public static void printInstancesFound(int count, long latency) {
+    print("message.instancesFound", count, latency);
   }
   
   /**
@@ -100,40 +110,40 @@ public abstract class BenchmarkMessages {
    * 
    * @param length Bytes read.
    */
-  public static void printRequestExecuted(HttpRequestProfiler request, int length) {
+  public static void printRequestExecuted(HttpRequestProfiler request, long length) {
     print("message.requestExecuted", length, request);
   }
   
   /**
-   * Prints statistics of the specified profilig request to stdout.
-   * 
-   * @param request Profiling request.
-   */
-  public static void printStatistics(HttpRequestProfiler request) {
-    print("message.requestStatistics", 
-        request.getResponseLatency(), request.getReadLatency(),
-        request.getBytesRead(), request.getTransferRate());
-  }
-  
-  /**
-   * Prints the specified aggregated request statistics to stdout.
-   * 
-   * @param statistics The aggregated request statistics.
-   */
-  public static void printStatistics(HttpRequestStatistics statistics) {
-    print("message.aggregatedStatistics", statistics.getRequestCount(),
-        statistics.getTotalResponseLatency(), statistics.getAverageResponseLatency(),
-        statistics.getTotalReadLatency(), statistics.getAverageReadLatency(),
-        statistics.getTotalBytesRead(), statistics.getTotalTransferRate());
-  }
-  
-  /**
-   * Prints error message about failed profiling request to stderr.
+   * Prints request failed error message to stderr.
    * 
    * @param cause Exception cause.
    */
   public static void printRequestFailed(Exception cause) {
-    printError("error.requestFailed", cause.getMessage());
+    printError("message.requestFailed", cause.getMessage());
+  }
+  
+  /**
+   * Prints HTTP request metrics to stdout.
+   * 
+   * @param metrics HTTP request metrics.
+   */
+  public static void printMetrics(HttpRequestMetrics metrics) {
+    print("message.requestMetrics", 
+        metrics.getResponseLatency(), metrics.getReadLatency(),
+        metrics.getBytesRead(), metrics.getTransferRate());
+  }
+  
+  /**
+   * Prints the specified aggregated metrics of multiple HTTP requests to stdout.
+   * 
+   * @param aggregates Aggregated metrics of multiple HTTP requests.
+   */
+  public static void printStatistics(HttpRequestAggregates aggregates) {
+    print("message.requestAggregates", aggregates.getRequestCount(),
+        aggregates.getTotalResponseLatency(), aggregates.getAverageResponseLatency(),
+        aggregates.getTotalReadLatency(), aggregates.getAverageReadLatency(),
+        aggregates.getTotalBytesRead(), aggregates.getTotalTransferRate());
   }
   
 }
