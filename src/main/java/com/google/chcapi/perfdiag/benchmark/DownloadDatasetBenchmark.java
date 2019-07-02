@@ -41,7 +41,7 @@ import com.google.chcapi.perfdiag.profiler.HttpRequestMetrics;
 import com.google.chcapi.perfdiag.profiler.HttpRequestAggregates;
 
 /**
- * This benchmark shows the user how fast it is to download a large dataset (a whole dicom store).
+ * This benchmark shows the user how fast it is to download a large dataset (a whole DICOM store).
  * It involves sending requests to get study information (QIDO) and sending paralleled requests to
  * retrieve all studies in the dicom store (WADO).
  * 
@@ -57,15 +57,33 @@ public class DownloadDatasetBenchmark extends Benchmark {
   protected DicomStoreConfig dicomStoreConfig;
   
   /**
+   * Metrics for query studies request.
+   */
+  private HttpRequestMetrics queryStudiesMetrics;
+  
+  /**
+   * Metrics for first study retrieved.
+   */
+  private HttpRequestMetrics firstStudyMetrics;
+  
+  /**
    * Aggregated statistics for retrieve study requests.
    */
-  private final HttpRequestAggregates retrieveStudyStats = new HttpRequestAggregates();
+  private HttpRequestAggregates downloadDatasetSummary;
   
   /**
    * Thread pool.
    */
   private final ExecutorService pool = Executors.newFixedThreadPool(20);
   
+  /**
+   * Retrieves DICOM studies in parallel and stores metrics for each request to the specified
+   * output stream.
+   * 
+   * @param iteration Iteration number.
+   * @param output Output stream to write metrics.
+   * @throws Exception if an error occurred.
+   */
   @Override
   protected void runIteration(int iteration, PrintStream output) throws Exception {
     // Fetch list of available studies
@@ -81,38 +99,60 @@ public class DownloadDatasetBenchmark extends Benchmark {
             final HttpRequestProfiler request =
                 HttpRequestProfilerFactory.createRetrieveDicomStudyRequest(dicomStoreConfig, studyId);
             final HttpRequestMetrics metrics = request.execute(NullOutputStream.NULL_OUTPUT_STREAM);
-            printRequestExecuted(request, metrics.getBytesRead());
+            // Save first instance metrics if it is first request
+            synchronized (DownloadDatasetBenchmark.this) {
+              if (firstStudyMetrics == null) {
+                firstStudyMetrics = metrics;
+              }
+            }
+            // Print progress
+            printProgress();
             return metrics;
           }
         });
       }
     }
     
-    // Wait for completion and update statistics
-    for (Future<HttpRequestMetrics> future : pool.invokeAll(tasks)) {
+    // Wait for completion and update metrics
+    downloadDatasetSummary = new HttpRequestAggregates(tasks.size());
+    final List<Future<HttpRequestMetrics>> futures = pool.invokeAll(tasks);
+    if (output == System.out) {
+      // New line after progress
+      output.println();
+    }
+    for (Future<HttpRequestMetrics> future : futures) {
       try {
         final HttpRequestMetrics metrics = future.get();
         output.println(metrics.toCSVString(iteration));
-        retrieveStudyStats.addProfile(metrics);
+        downloadDatasetSummary.addMetrics(metrics);
       } catch (Exception e) {
         printRequestFailed(e);
       }
     }
   }
   
+  /**
+   * Prints gathered metrics to stdout.
+   */
   @Override
   protected void printMetrics() {
-    printStatistics(retrieveStudyStats);
+    printDownloadDatasetSummary(queryStudiesMetrics, firstStudyMetrics, downloadDatasetSummary);
   }
   
+  /**
+   * Queries DICOM store for available studies and returns list of studies.
+   * 
+   * @return List of available studies.
+   * @throws Exception if an error occurred.
+   */
   private List<Study> fetchStudies() throws Exception {
     final HttpRequestProfiler request =
         HttpRequestProfilerFactory.createListDicomStudiesRequest(dicomStoreConfig);
     final ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-    final HttpRequestMetrics metrics = request.execute(buffer);
+    queryStudiesMetrics = request.execute(buffer);
     final List<Study> studies = MAPPER.readValue(buffer.toByteArray(),
         new TypeReference<List<Study>>() {});
-    printStudiesFound(studies.size(), metrics.getTotalLatency());
+    printStudiesFound(studies.size(), queryStudiesMetrics.getTotalLatency());
     return studies;
   }
   

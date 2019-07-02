@@ -70,7 +70,13 @@ public class HttpRequestProfiler {
       // Token expired?
       if (e.getStatusCode() == HttpStatus.SC_UNAUTHORIZED) {
         // Refresh token and try again
-        if (HttpRequestProfilerFactory.CREDENTIAL.refreshToken()) {
+        boolean refreshed = false;
+        synchronized (HttpRequestProfiler.class) {
+          System.err.println("\nToken refreshed");
+          // Refresh token synchronously
+          refreshed = HttpRequestProfilerFactory.CREDENTIAL.refreshToken();
+        }
+        if (refreshed) {
           return doExecute(buffer);
         }
       }
@@ -108,7 +114,7 @@ public class HttpRequestProfiler {
       // Read content
       timestamp = System.currentTimeMillis();
       try (InputStream input = response.getEntity().getContent()) {
-        final long bytesRead = IOUtils.copyLarge(response.getEntity().getContent(), buffer);
+        final long bytesRead = IOUtils.copyLarge(input, buffer);
         final long readLatency = System.currentTimeMillis() - timestamp;
         return new HttpRequestMetrics(responseLatency, readLatency, bytesRead);
       }

@@ -57,15 +57,33 @@ public class RetrieveStudyBenchmark extends Benchmark {
   protected DicomStudyConfig dicomStudyConfig;
   
   /**
-   * Aggregated statistics for retrieve study instance requests.
+   * Metrics for query instances request.
    */
-  private final HttpRequestAggregates retrieveInstanceStats = new HttpRequestAggregates();
+  private HttpRequestMetrics queryInstancesMetrics;
+  
+  /**
+   * Metrics for first instance retrieved.
+   */
+  private HttpRequestMetrics firstInstanceMetrics;
+  
+  /**
+   * Aggregated metrics for retrieve study instance requests.
+   */
+  private HttpRequestAggregates retrieveStudySummary;
   
   /**
    * Thread pool.
    */
   private final ExecutorService pool = Executors.newFixedThreadPool(20);
   
+  /**
+   * Retrieves DICOM study instances in parallel and stores metrics for each request to the
+   * specified output stream.
+   * 
+   * @param iteration Iteration number.
+   * @param output Output stream to write metrics.
+   * @throws Exception if an error occurred.
+   */
   @Override
   protected void runIteration(int iteration, PrintStream output) throws Exception {
     // Fetch list of available study instances
@@ -83,38 +101,60 @@ public class RetrieveStudyBenchmark extends Benchmark {
                 HttpRequestProfilerFactory.createRetrieveDicomStudyInstanceRequest(dicomStudyConfig,
                     seriesId, instanceId);
             final HttpRequestMetrics metrics = request.execute(NullOutputStream.NULL_OUTPUT_STREAM);
-            printRequestExecuted(request, metrics.getBytesRead());
+            // Save first instance metrics if it is first request
+            synchronized (RetrieveStudyBenchmark.this) {
+              if (firstInstanceMetrics == null) {
+                firstInstanceMetrics = metrics;
+              }
+            }
+            // Print progress
+            printProgress();
             return metrics;
           }
         });
       }
     }
     
-    // Wait for completion and update statistics
-    for (Future<HttpRequestMetrics> future : pool.invokeAll(tasks)) {
+    // Wait for completion and update metrics
+    retrieveStudySummary = new HttpRequestAggregates(tasks.size());
+    final List<Future<HttpRequestMetrics>> futures = pool.invokeAll(tasks);
+    if (output == System.out) {
+      // New line after progress
+      output.println();
+    }
+    for (Future<HttpRequestMetrics> future : futures) {
       try {
         final HttpRequestMetrics metrics = future.get();
         output.println(metrics.toCSVString(iteration));
-        retrieveInstanceStats.addProfile(metrics);
+        retrieveStudySummary.addMetrics(metrics);
       } catch (Exception e) {
         printRequestFailed(e);
       }
     }
   }
   
+  /**
+   * Prints gathered metrics to stdout.
+   */
   @Override
   protected void printMetrics() {
-    printStatistics(retrieveInstanceStats);
+    printRetrieveStudySummary(queryInstancesMetrics, firstInstanceMetrics, retrieveStudySummary);
   }
   
+  /**
+   * Queries DICOM store for available study instances and returns list of study instances.
+   * 
+   * @return List of available study instances.
+   * @throws Exception if an error occurred.
+   */
   private List<Instance> fetchStudyInstances() throws Exception {
     final HttpRequestProfiler request =
         HttpRequestProfilerFactory.createListDicomStudyInstancesRequest(dicomStudyConfig);
     final ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-    final HttpRequestMetrics metrics = request.execute(buffer);
+    queryInstancesMetrics = request.execute(buffer);
     final List<Instance> instances = MAPPER.readValue(buffer.toByteArray(),
         new TypeReference<List<Instance>>() {});
-    printInstancesFound(instances.size(), metrics.getTotalLatency());
+    printInstancesFound(instances.size(), queryInstancesMetrics.getTotalLatency());
     return instances;
   }
   

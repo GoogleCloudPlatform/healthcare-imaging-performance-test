@@ -26,22 +26,42 @@ public class HttpRequestAggregates {
   /**
    * Number of measured requests.
    */
-  private volatile int requestCount;
+  private int requestCount;
   
   /**
    * Total latency of first byte received in milliseconds.
    */
-  private volatile long totalResponseLatency;
+  private long totalResponseLatency;
+  
+  /**
+   * Buffer to store response latencies for further percentiles evaluation.
+   */
+  private final DoubleBuffer responseLatencyBuffer;
   
   /**
    * Total latency of all bytes received in milliseconds.
    */
-  private volatile long totalReadLatency;
+  private long totalReadLatency;
+  
+  /**
+   * Buffer to store read latencies for further percentiles evaluation.
+   */
+  private final DoubleBuffer readLatencyBuffer;
   
   /**
    * Total bytes read.
    */
-  private volatile long totalBytesRead;
+  private long totalBytesRead;
+  
+  /**
+   * Constructs a new {@code HttpRequestAggregates} with the specified expected request count.
+   * 
+   * @param expectedRequestCount The expected request count.
+   */
+  public HttpRequestAggregates(int expectedRequestCount) {
+    this.responseLatencyBuffer = new DoubleBuffer(expectedRequestCount);
+    this.readLatencyBuffer = new DoubleBuffer(expectedRequestCount);
+  }
   
   /**
    * Returns number of measured requests.
@@ -71,6 +91,24 @@ public class HttpRequestAggregates {
   }
   
   /**
+   * Returns median latency of first byte received in milliseconds.
+   * 
+   * @return Median latency of first byte received in milliseconds.
+   */
+  public double getMedianResponseLatency() {
+    return responseLatencyBuffer.getMedian();
+  }
+  
+  /**
+   * Returns percentile latency of first byte received in milliseconds.
+   * 
+   * @return Percentile latency of first byte received in milliseconds.
+   */
+  public double getPercentileResponseLatency() {
+    return responseLatencyBuffer.getPercentile();
+  }
+  
+  /**
    * Returns total latency of all bytes received in milliseconds.
    * 
    * @return Total latency of all bytes received in milliseconds.
@@ -86,6 +124,24 @@ public class HttpRequestAggregates {
    */
   public long getAverageReadLatency() {
     return requestCount > 0 ? totalReadLatency / requestCount : 0L;
+  }
+  
+  /**
+   * Returns median latency of all bytes received in milliseconds.
+   * 
+   * @return Median latency of all bytes received in milliseconds.
+   */
+  public double getMedianReadLatency() {
+    return readLatencyBuffer.getMedian();
+  }
+  
+  /**
+   * Returns percentile latency of all bytes received in milliseconds.
+   * 
+   * @return Percentile latency of all bytes received in milliseconds.
+   */
+  public double getPercentileReadLatency() {
+    return readLatencyBuffer.getPercentile();
   }
   
   /**
@@ -129,9 +185,11 @@ public class HttpRequestAggregates {
    * 
    * @param metrics HTTP request metrics to add.
    */
-  public void addProfile(HttpRequestMetrics metrics) {
+  public void addMetrics(HttpRequestMetrics metrics) {
     totalResponseLatency += metrics.getResponseLatency();
+    responseLatencyBuffer.add(metrics.getResponseLatency());
     totalReadLatency += metrics.getReadLatency();
+    readLatencyBuffer.add(metrics.getReadLatency());
     totalBytesRead += metrics.getBytesRead();
     requestCount++;
   }

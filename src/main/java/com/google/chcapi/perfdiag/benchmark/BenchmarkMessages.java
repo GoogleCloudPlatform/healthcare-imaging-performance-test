@@ -15,7 +15,7 @@
 package com.google.chcapi.perfdiag.benchmark;
 
 import java.util.ResourceBundle;
-import com.google.chcapi.perfdiag.profiler.HttpRequestProfiler;
+
 import com.google.chcapi.perfdiag.profiler.HttpRequestAggregates;
 import com.google.chcapi.perfdiag.profiler.HttpRequestMetrics;
 
@@ -63,6 +63,13 @@ public abstract class BenchmarkMessages {
   }
   
   /**
+   * Prints {@code '.'} character to stdout indicating some process is working.
+   */
+  public static void printProgress() {
+    System.out.print(".");
+  }
+  
+  /**
    * Prints benchmark started message to stdout.
    */
   public static void printBenchmarkStarted(int iterations) {
@@ -106,15 +113,6 @@ public abstract class BenchmarkMessages {
   }
   
   /**
-   * Prints request executed message to stdout.
-   * 
-   * @param length Bytes read.
-   */
-  public static void printRequestExecuted(HttpRequestProfiler request, long length) {
-    print("message.requestExecuted", length, request);
-  }
-  
-  /**
    * Prints request failed error message to stderr.
    * 
    * @param cause Exception cause.
@@ -124,26 +122,50 @@ public abstract class BenchmarkMessages {
   }
   
   /**
-   * Prints HTTP request metrics to stdout.
+   * Prints retrieve study benchmark summary information to stdout.
    * 
-   * @param metrics HTTP request metrics.
+   * @param queryInstancesMetrics Metrics of querying instances.
+   * @param firstInstanceMetrics Metrics of first instance retrieval.
+   * @param totalAggregates Total metrics.
    */
-  public static void printMetrics(HttpRequestMetrics metrics) {
-    print("message.requestMetrics", 
-        metrics.getResponseLatency(), metrics.getReadLatency(),
-        metrics.getBytesRead(), metrics.getTransferRate());
+  public static void printRetrieveStudySummary(HttpRequestMetrics queryInstancesMetrics,
+      HttpRequestMetrics firstInstanceMetrics,
+      HttpRequestAggregates totalAggregates) {
+    print("message.retrieveStudySummary",
+        totalAggregates.getRequestCount(),
+        totalAggregates.getTotalLatency() + queryInstancesMetrics.getTotalLatency(),
+        queryInstancesMetrics.getTotalLatency(),
+        firstInstanceMetrics.getResponseLatency(),
+        firstInstanceMetrics.getReadLatency(),
+        totalAggregates.getTotalLatency(),
+        totalAggregates.getTotalBytesRead(),
+        totalAggregates.getTotalTransferRate(),
+        totalAggregates.getAverageLatency(),
+        totalAggregates.getMedianReadLatency(),
+        totalAggregates.getPercentileReadLatency());
   }
   
   /**
-   * Prints the specified aggregated metrics of multiple HTTP requests to stdout.
+   * Prints retrieve study benchmark summary information to stdout.
    * 
-   * @param aggregates Aggregated metrics of multiple HTTP requests.
+   * @param queryStudiesMetrics Metrics of querying studies.
+   * @param firstStudyMetrics Metrics of first study retrieval.
+   * @param totalAggregates Total metrics.
    */
-  public static void printStatistics(HttpRequestAggregates aggregates) {
-    print("message.requestAggregates", aggregates.getRequestCount(),
-        aggregates.getTotalResponseLatency(), aggregates.getAverageResponseLatency(),
-        aggregates.getTotalReadLatency(), aggregates.getAverageReadLatency(),
-        aggregates.getTotalBytesRead(), aggregates.getTotalTransferRate());
+  public static void printDownloadDatasetSummary(HttpRequestMetrics queryStudiesMetrics,
+      HttpRequestMetrics firstStudyMetrics,
+      HttpRequestAggregates totalAggregates) {
+    print("message.downloadDatasetSummary",
+        totalAggregates.getRequestCount(),
+        totalAggregates.getTotalLatency() + queryStudiesMetrics.getTotalLatency(),
+        queryStudiesMetrics.getTotalLatency(),
+        firstStudyMetrics.getResponseLatency(),
+        totalAggregates.getTotalLatency(),
+        totalAggregates.getTotalBytesRead(),
+        totalAggregates.getTotalTransferRate(),
+        totalAggregates.getAverageLatency(),
+        totalAggregates.getMedianReadLatency(),
+        totalAggregates.getPercentileReadLatency());
   }
   
 }

@@ -71,7 +71,7 @@ public final class HttpRequestProfilerFactory {
   public static HttpRequestProfiler createListDicomStudiesRequest(DicomStoreConfig config) {
     return new HttpRequestProfiler(createHttpGetRequest(
         buildDicomWebURI(config)
-        .toString()));
+        .toString(), false));
   }
   
   /**
@@ -87,7 +87,7 @@ public final class HttpRequestProfilerFactory {
     return new HttpRequestProfiler(createHttpGetRequest(
         buildDicomWebURI(config)
         .append("/").append(encodeURIToken(studyId))
-        .toString()));
+        .toString(), true));
   }
   
   /**
@@ -102,7 +102,7 @@ public final class HttpRequestProfilerFactory {
         buildDicomWebURI(config)
         .append("/").append(encodeURIToken(config.getDicomStudyId()))
         .append("/instances")
-        .toString()));
+        .toString(), false));
   }
   
   /**
@@ -121,17 +121,21 @@ public final class HttpRequestProfilerFactory {
         .append("/").append(encodeURIToken(config.getDicomStudyId()))
         .append("/series/").append(encodeURIToken(seriesId))
         .append("/instances/").append(encodeURIToken(instanceId))
-        .toString()));
+        .toString(), true));
   }
   
   /**
    * Constructs a new HTTP GET request for the specified URI.
    * 
+   * @param download {@code true} if it is download request.
    * @param uri The HTTP request URI.
    * @return A new prepared HTTP GET request instance.
    */
-  private static HttpUriRequest createHttpGetRequest(String uri) {
+  private static HttpUriRequest createHttpGetRequest(String uri, boolean download) {
     final HttpGet request = new HttpGet(uri);
+    if (download) {
+      request.setHeader("Accept", "multipart/related; type=application/dicom; transfer-syntax=*");
+    }
     request.setHeader("Authorization", "Bearer " + CREDENTIAL.getAccessToken());
     return request;
   }
