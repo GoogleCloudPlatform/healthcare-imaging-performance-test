@@ -41,7 +41,7 @@ public abstract class BenchmarkMessages {
   }
   
   /**
-   * Prints a formatted string using the specified message key and arguments to stdout.
+   * Prints a formatted message using the specified message key and arguments to stdout.
    * 
    * @param key Message key in resource bundle.
    * @param args Arguments referenced by the format specifiers in the message.
@@ -63,7 +63,7 @@ public abstract class BenchmarkMessages {
   }
   
   /**
-   * Prints {@code '.'} character to stdout indicating some process is working.
+   * Prints {@code '.'} character to stdout indicating that some process is working.
    */
   public static void printProgress() {
     System.out.print(".");
@@ -71,6 +71,8 @@ public abstract class BenchmarkMessages {
   
   /**
    * Prints benchmark started message to stdout.
+   * 
+   * @param iterations How many times the routine is executed.
    */
   public static void printBenchmarkStarted(int iterations) {
     print("message.benchmarkStarted", iterations);
@@ -95,21 +97,21 @@ public abstract class BenchmarkMessages {
   /**
    * Prints studies found message to stdout.
    * 
-   * @param count Number of found studies.
-   * @param latency Latency of query studies.
+   * @param studies Number of found studies.
+   * @param threads Maximum number of threads to run in parallel.
    */
-  public static void printStudiesFound(int count, long latency) {
-    print("message.stadiesFound", count, latency);
+  public static void printStudiesFound(int studies, int threads) {
+    print("message.stadiesFound", studies, Math.min(studies, threads));
   }
   
   /**
    * Prints study instances found message to stdout.
    * 
-   * @param count Number of found study instances.
-   * @param latency Latency of query study instances.
+   * @param instances Number of found study instances.
+   * @param threads Maximum number of threads to run in parallel.
    */
-  public static void printInstancesFound(int count, long latency) {
-    print("message.instancesFound", count, latency);
+  public static void printInstancesFound(int instances, int threads) {
+    print("message.instancesFound", instances, Math.min(instances, threads));
   }
   
   /**
@@ -126,46 +128,46 @@ public abstract class BenchmarkMessages {
    * 
    * @param queryInstancesMetrics Metrics of querying instances.
    * @param firstInstanceMetrics Metrics of first instance retrieval.
-   * @param totalAggregates Total metrics.
+   * @param summaryMetrics Summary metrics.
    */
   public static void printRetrieveStudySummary(HttpRequestMetrics queryInstancesMetrics,
       HttpRequestMetrics firstInstanceMetrics,
-      HttpRequestAggregates totalAggregates) {
+      HttpRequestAggregates summaryMetrics) {
     print("message.retrieveStudySummary",
-        totalAggregates.getRequestCount(),
-        totalAggregates.getTotalLatency() + queryInstancesMetrics.getTotalLatency(),
+        summaryMetrics.getRequestCount(),
+        summaryMetrics.getTotalLatency() + queryInstancesMetrics.getTotalLatency(),
         queryInstancesMetrics.getTotalLatency(),
         firstInstanceMetrics.getResponseLatency(),
         firstInstanceMetrics.getReadLatency(),
-        totalAggregates.getTotalLatency(),
-        totalAggregates.getTotalBytesRead(),
-        totalAggregates.getTotalTransferRate(),
-        totalAggregates.getAverageLatency(),
-        totalAggregates.getMedianReadLatency(),
-        totalAggregates.getPercentileReadLatency());
+        summaryMetrics.getTotalLatency(),
+        summaryMetrics.getTotalBytesRead(),
+        summaryMetrics.getTotalTransferRate(),
+        summaryMetrics.getAverageLatency(),
+        summaryMetrics.getMedianReadLatency(),
+        summaryMetrics.getPercentileReadLatency());
   }
   
   /**
-   * Prints retrieve study benchmark summary information to stdout.
+   * Prints download dataset benchmark summary information to stdout.
    * 
    * @param queryStudiesMetrics Metrics of querying studies.
    * @param firstStudyMetrics Metrics of first study retrieval.
-   * @param totalAggregates Total metrics.
+   * @param summaryMetrics Summary metrics.
    */
   public static void printDownloadDatasetSummary(HttpRequestMetrics queryStudiesMetrics,
       HttpRequestMetrics firstStudyMetrics,
-      HttpRequestAggregates totalAggregates) {
+      HttpRequestAggregates summaryMetrics) {
     print("message.downloadDatasetSummary",
-        totalAggregates.getRequestCount(),
-        totalAggregates.getTotalLatency() + queryStudiesMetrics.getTotalLatency(),
+        summaryMetrics.getRequestCount(),
+        summaryMetrics.getTotalLatency() + queryStudiesMetrics.getTotalLatency(),
         queryStudiesMetrics.getTotalLatency(),
         firstStudyMetrics.getResponseLatency(),
-        totalAggregates.getTotalLatency(),
-        totalAggregates.getTotalBytesRead(),
-        totalAggregates.getTotalTransferRate(),
-        totalAggregates.getAverageLatency(),
-        totalAggregates.getMedianReadLatency(),
-        totalAggregates.getPercentileReadLatency());
+        summaryMetrics.getTotalLatency(),
+        summaryMetrics.getTotalBytesRead(),
+        summaryMetrics.getTotalTransferRate(),
+        summaryMetrics.getAverageLatency(),
+        summaryMetrics.getMedianReadLatency(),
+        summaryMetrics.getPercentileReadLatency());
   }
   
 }

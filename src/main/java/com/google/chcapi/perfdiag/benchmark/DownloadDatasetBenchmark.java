@@ -72,11 +72,6 @@ public class DownloadDatasetBenchmark extends Benchmark {
   private HttpRequestAggregates downloadDatasetSummary;
   
   /**
-   * Thread pool.
-   */
-  private final ExecutorService pool = Executors.newFixedThreadPool(20);
-  
-  /**
    * Retrieves DICOM studies in parallel and stores metrics for each request to the specified
    * output stream.
    * 
@@ -88,8 +83,10 @@ public class DownloadDatasetBenchmark extends Benchmark {
   protected void runIteration(int iteration, PrintStream output) throws Exception {
     // Fetch list of available studies
     final List<Study> studies = fetchStudies();
+    printStudiesFound(studies.size(), commonConfig.getThreads());
     
     // Create separate task for each study
+    final ExecutorService pool = Executors.newFixedThreadPool(commonConfig.getThreads());
     final List<Callable<HttpRequestMetrics>> tasks = new ArrayList<>();
     for (Study study : studies) {
       final String studyId = study.getStudyUID();
@@ -150,10 +147,7 @@ public class DownloadDatasetBenchmark extends Benchmark {
         HttpRequestProfilerFactory.createListDicomStudiesRequest(dicomStoreConfig);
     final ByteArrayOutputStream buffer = new ByteArrayOutputStream();
     queryStudiesMetrics = request.execute(buffer);
-    final List<Study> studies = MAPPER.readValue(buffer.toByteArray(),
-        new TypeReference<List<Study>>() {});
-    printStudiesFound(studies.size(), queryStudiesMetrics.getTotalLatency());
-    return studies;
+    return MAPPER.readValue(buffer.toByteArray(), new TypeReference<List<Study>>() {});
   }
   
   /* Object mapper to convert JSON response */

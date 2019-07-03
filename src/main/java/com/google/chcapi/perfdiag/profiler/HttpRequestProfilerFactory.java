@@ -27,7 +27,7 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpUriRequest;
 
 import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
-
+import com.google.chcapi.perfdiag.benchmark.BenchmarkException;
 import com.google.chcapi.perfdiag.benchmark.config.DicomStoreConfig;
 import com.google.chcapi.perfdiag.benchmark.config.DicomStudyConfig;
 
@@ -44,10 +44,11 @@ public final class HttpRequestProfilerFactory {
     throw new IllegalAccessError();
   }
   
-  /**
-   * OAuth 2.0 credential obtained using Google Application Default Credentials mechanism.
-   */
-  public static final GoogleCredential CREDENTIAL;
+  /* Root URL of Google Cloud Healthcare API */
+  private static final String API_ROOT_URL = "https://healthcare.googleapis.com/v1beta1";
+  
+  /* OAuth 2.0 credential obtained using Google Application Default Credentials mechanism */
+  private static final GoogleCredential CREDENTIAL;
   static {
     try {
       CREDENTIAL = GoogleCredential.getApplicationDefault().createScoped(Arrays.asList(
@@ -58,8 +59,21 @@ public final class HttpRequestProfilerFactory {
     }
   }
   
-  /* Root URL of Google Cloud Healthcare API */
-  private static final String API_ROOT_URL = "https://healthcare.googleapis.com/v1beta1";
+  /**
+   * Requests a new access token from the authorization endpoint if previous one is expired or
+   * was not requested yet.
+   * 
+   * @throws IOException if an IO error occurred.
+   * @throws BenchmarkException if a new access token was not retrieved.
+   */
+  public static synchronized void refreshToken() throws IOException {
+    final Long expiresInSeconds = CREDENTIAL.getExpiresInSeconds();
+    if (expiresInSeconds == null || expiresInSeconds <= 0L) {
+      if (!CREDENTIAL.refreshToken()) {
+        throw BenchmarkException.refreshTokenFailed();
+      }
+    }
+  }
   
   /**
    * Constructs the {@code projects.locations.datasets.dicomStores.searchForStudies}
@@ -127,8 +141,8 @@ public final class HttpRequestProfilerFactory {
   /**
    * Constructs a new HTTP GET request for the specified URI.
    * 
-   * @param download {@code true} if it is download request.
    * @param uri The HTTP request URI.
+   * @param download {@code true} if it is download request.
    * @return A new prepared HTTP GET request instance.
    */
   private static HttpUriRequest createHttpGetRequest(String uri, boolean download) {

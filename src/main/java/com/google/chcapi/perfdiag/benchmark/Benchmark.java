@@ -29,6 +29,8 @@ import com.google.chcapi.perfdiag.profiler.HttpRequestProfilerFactory;
  *   <li>{@link #runIteration(int, PrintStream)} which is invoked for each benchmark iteration.</li>
  *   <li>{@link #printMetrics()} which is invoked after all benchmark iterations.</li>
  * </ul>
+ * The {@link #validateConfig()} method may be overridden if benchmark requires additional
+ * validation of command line options.
  * 
  * @author Mikhail Ukhlin
  * @see RetrieveStudyBenchmark
@@ -47,20 +49,34 @@ public abstract class Benchmark extends BenchmarkMessages implements Runnable {
    */
   @Override
   public void run() {
+    validateConfig();
     authorize();
     executeBenchmark();
     printMetrics();
   }
   
   /**
+   * Validates configuration provided from command line.
+   * 
+   * @throws BenchmarkException if validation failed.
+   */
+  protected void validateConfig() {
+    if (commonConfig.getIterations() < 1) {
+      throw BenchmarkException.iterationsInvalid(commonConfig.getIterations());
+    } else if (commonConfig.getThreads() < 1) {
+      throw BenchmarkException.threadsInvalid(commonConfig.getThreads());
+    }
+  }
+  
+  /**
    * Acquires access token before benchmark execution.
    * 
    * @throws BenchmarkException if an error occurred.
-   * @see HttpRequestProfilerFactory#CREDENTIAL
+   * @see HttpRequestProfilerFactory#refreshToken()
    */
   private void authorize() {
     try {
-      HttpRequestProfilerFactory.CREDENTIAL.refreshToken();
+      HttpRequestProfilerFactory.refreshToken();
     } catch (Exception e) {
       throw BenchmarkException.authorizationFailed(e);
     }

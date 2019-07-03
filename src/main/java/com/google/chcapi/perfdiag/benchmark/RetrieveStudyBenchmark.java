@@ -72,11 +72,6 @@ public class RetrieveStudyBenchmark extends Benchmark {
   private HttpRequestAggregates retrieveStudySummary;
   
   /**
-   * Thread pool.
-   */
-  private final ExecutorService pool = Executors.newFixedThreadPool(20);
-  
-  /**
    * Retrieves DICOM study instances in parallel and stores metrics for each request to the
    * specified output stream.
    * 
@@ -88,8 +83,10 @@ public class RetrieveStudyBenchmark extends Benchmark {
   protected void runIteration(int iteration, PrintStream output) throws Exception {
     // Fetch list of available study instances
     final List<Instance> instances = fetchStudyInstances();
+    printInstancesFound(instances.size(), commonConfig.getThreads());
     
     // Create separate task for each study instance
+    final ExecutorService pool = Executors.newFixedThreadPool(commonConfig.getThreads());
     final List<Callable<HttpRequestMetrics>> tasks = new ArrayList<>();
     for (Instance instance : instances) {
       final String seriesId = instance.getSeriesUID();
@@ -152,10 +149,7 @@ public class RetrieveStudyBenchmark extends Benchmark {
         HttpRequestProfilerFactory.createListDicomStudyInstancesRequest(dicomStudyConfig);
     final ByteArrayOutputStream buffer = new ByteArrayOutputStream();
     queryInstancesMetrics = request.execute(buffer);
-    final List<Instance> instances = MAPPER.readValue(buffer.toByteArray(),
-        new TypeReference<List<Instance>>() {});
-    printInstancesFound(instances.size(), queryInstancesMetrics.getTotalLatency());
-    return instances;
+    return MAPPER.readValue(buffer.toByteArray(), new TypeReference<List<Instance>>() {});
   }
   
   /* Object mapper to convert JSON response */

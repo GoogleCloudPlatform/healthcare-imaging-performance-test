@@ -37,7 +37,7 @@ public class HttpRequestMetrics {
   private long bytesRead;
   
   /**
-   * Constructs a new HTTP request metrics with the specified response latency, read latence and
+   * Constructs a new HTTP request metrics with the specified response latency, read latency and
    * number of bytes read.
    * 
    * @param responseLatency Latency of first byte received in milliseconds.
@@ -92,7 +92,7 @@ public class HttpRequestMetrics {
    * @return Bytes read per second.
    */
   public double getTransferRate() {
-    return readLatency > 0L ? (double) bytesRead / (double) readLatency * 1000.0 : 0.0;
+    return readLatency > 0L ? (double) bytesRead / (double) getTotalLatency() * 1000.0 : 0.0;
   }
   
   /**

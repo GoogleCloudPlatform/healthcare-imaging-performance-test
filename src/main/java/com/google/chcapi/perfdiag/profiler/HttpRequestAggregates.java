@@ -159,7 +159,7 @@ public class HttpRequestAggregates {
    * @return Average latency in milliseconds.
    */
   public long getAverageLatency() {
-    return requestCount > 0 ? (totalResponseLatency + totalReadLatency) / requestCount : 0L;
+    return requestCount > 0 ? getTotalLatency() / requestCount : 0L;
   }
   
   /**
@@ -177,7 +177,9 @@ public class HttpRequestAggregates {
    * @return Total bytes read per second.
    */
   public double getTotalTransferRate() {
-    return totalReadLatency > 0L ? (double) totalBytesRead / (double) totalReadLatency * 1000.0 : 0.0;
+    return totalReadLatency > 0L
+        ? (double) totalBytesRead / (double) getTotalLatency() * 1000.0
+        : 0.0;
   }
   
   /**

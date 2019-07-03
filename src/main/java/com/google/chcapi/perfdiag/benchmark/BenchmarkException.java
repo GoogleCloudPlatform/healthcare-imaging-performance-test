@@ -35,6 +35,26 @@ public class BenchmarkException extends RuntimeException {
   // Factory methods
   
   /**
+   * Creates {@code BenchmarkException} instance with invalid iterations error detail message.
+   * 
+   * @param iterations Invalid number of iterations provided from command line.
+   * @return {@code BenchmarkException} instance with invalid iterations error detail message.
+   */
+  public static BenchmarkException iterationsInvalid(int iterations) {
+    return new BenchmarkException(BenchmarkMessages.format("error.iterationsInvalid", iterations));
+  }
+  
+  /**
+   * Creates {@code BenchmarkException} instance with invalid threads error detail message.
+   * 
+   * @param threads Invalid number of threads provided from command line.
+   * @return {@code BenchmarkException} instance with invalid threads error detail message.
+   */
+  public static BenchmarkException threadsInvalid(int threads) {
+    return new BenchmarkException(BenchmarkMessages.format("error.threadsInvalid", threads));
+  }
+  
+  /**
    * Creates {@code BenchmarkException} instance with IO error detail message.
    * 
    * @param cause Exception cause.
@@ -45,10 +65,19 @@ public class BenchmarkException extends RuntimeException {
   }
   
   /**
-   * Creates {@code BenchmarkException} instance with authorization failure error detail message.
+   * Creates {@code BenchmarkException} instance with refresh token error detail message.
+   * 
+   * @return {@code BenchmarkException} instance with refresh token error detail message.
+   */
+  public static BenchmarkException refreshTokenFailed() {
+    return new BenchmarkException(BenchmarkMessages.format("error.refreshTokenFailed"));
+  }
+  
+  /**
+   * Creates {@code BenchmarkException} instance with authorization error detail message.
    * 
    * @param cause Exception cause.
-   * @return {@code BenchmarkException} instance with authorization failure error detail message.
+   * @return {@code BenchmarkException} instance with authorization error detail message.
    */
   public static BenchmarkException authorizationFailed(Exception cause) {
     return new BenchmarkException(BenchmarkMessages.format("error.authorizationFailed",
@@ -56,11 +85,11 @@ public class BenchmarkException extends RuntimeException {
   }
   
   /**
-   * Creates {@code BenchmarkException} instance with iteration failure error detail message.
+   * Creates {@code BenchmarkException} instance with iteration error detail message.
    * 
-   * @param iteration Number of failed iteration. 
+   * @param iteration Number of failed iteration.
    * @param cause Exception cause.
-   * @return {@code BenchmarkException} instance with authorization error detail message.
+   * @return {@code BenchmarkException} instance with iteration error detail message.
    */
   public static BenchmarkException iterationFailed(int iteration, Exception cause) {
     return new BenchmarkException(BenchmarkMessages.format("error.iterationFailed",

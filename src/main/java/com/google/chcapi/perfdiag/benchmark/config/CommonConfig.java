@@ -36,6 +36,16 @@ public class CommonConfig {
   private int iterations = 1;
   
   /**
+   * Maximum number of threads to run in parallel.
+   */
+  @Option(
+      names = {"-t", "--threads"},
+      descriptionKey = "option.threads.description",
+      required = false
+  )
+  private int threads = 10;
+  
+  /**
    * File to write the result to.
    */
   @Option(
@@ -52,6 +62,15 @@ public class CommonConfig {
    */
   public int getIterations() {
     return iterations;
+  }
+  
+  /**
+   * Returns maximum number of threads to run in parallel.
+   * 
+   * @return Maximum number of threads to run in parallel.
+   */
+  public int getThreads() {
+    return threads;
   }
   
   /**

@@ -29,8 +29,8 @@ import org.apache.http.impl.client.CloseableHttpClient;
 
 
 /**
- * HTTP request wrapper that allows to execute request, read response and store metrics (response
- * latency, read latency and number of bytes read).
+ * HTTP request wrapper that allows to execute request, read response and calculate metrics
+ * (response latency, read latency and number of bytes read).
  * 
  * @author Mikhail Ukhlin
  * @see HttpRequestProfilerFactory
@@ -59,26 +59,19 @@ public class HttpRequestProfiler {
    * not already signed in. The access token is refreshed if it has expired (HTTP 401 is returned
    * from the server) and the request is retried with the new access token.
    * 
-   * @param buffer Buffer to store response content.
+   * @param stream Stream to write response content.
    * @return Metrics of the HTTP request.
    * @throws IOException if an IO error occurred or request failed.
    */
-  public HttpRequestMetrics execute(OutputStream buffer) throws IOException {
+  public HttpRequestMetrics execute(OutputStream stream) throws IOException {
     try {
-      return doExecute(buffer);
+      return doExecute(stream);
     } catch (HttpResponseException e) {
       // Token expired?
       if (e.getStatusCode() == HttpStatus.SC_UNAUTHORIZED) {
         // Refresh token and try again
-        boolean refreshed = false;
-        synchronized (HttpRequestProfiler.class) {
-          System.err.println("\nToken refreshed");
-          // Refresh token synchronously
-          refreshed = HttpRequestProfilerFactory.CREDENTIAL.refreshToken();
-        }
-        if (refreshed) {
-          return doExecute(buffer);
-        }
+        HttpRequestProfilerFactory.refreshToken();
+        return doExecute(stream);
       }
       // Rethrow exception
       throw e;
@@ -88,11 +81,11 @@ public class HttpRequestProfiler {
   /**
    * Executes HTTP request and returns request metrics.
    * 
-   * @param buffer Buffer to store response content.
+   * @param stream Stream to write response content.
    * @return Metrics of the HTTP request.
    * @throws IOException if an IO error occurred or request failed.
    */
-  private HttpRequestMetrics doExecute(OutputStream buffer) throws IOException {
+  private HttpRequestMetrics doExecute(OutputStream stream) throws IOException {
     // Execute request and measure metrics
     long timestamp = System.currentTimeMillis();
     try (CloseableHttpResponse response = HTTP_CLIENT.execute(request)) {
@@ -114,7 +107,7 @@ public class HttpRequestProfiler {
       // Read content
       timestamp = System.currentTimeMillis();
       try (InputStream input = response.getEntity().getContent()) {
-        final long bytesRead = IOUtils.copyLarge(input, buffer);
+        final long bytesRead = IOUtils.copyLarge(input, stream);
         final long readLatency = System.currentTimeMillis() - timestamp;
         return new HttpRequestMetrics(responseLatency, readLatency, bytesRead);
       }
