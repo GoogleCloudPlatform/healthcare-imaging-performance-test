@@ -6,7 +6,7 @@
 
   <groupId>com.google</groupId>
   <artifactId>healthcare-imaging-performance-test</artifactId>
-  <version>0.2.6</version>
+  <version>0.2.7</version>
 
   <name>healthcare-imaging-performance-test</name>
 
@@ -59,7 +59,7 @@
           <configuration>
             <archive>
               <manifest>
-                <mainClass>com.google.chcapi.benchmark.BenchmarkLauncher</mainClass>
+                <mainClass>com.google.chcapi.perfdiag.BenchmarkLauncher</mainClass>
                 <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
               </manifest>
             </archive>

@@ -35,6 +35,9 @@ import com.google.chcapi.perfdiag.benchmark.RetrieveStudyBenchmark;
 @Command
 public class BenchmarkLauncher implements Runnable {
   
+  /* Signle instance */
+  private static final BenchmarkLauncher LAUNCHER = new BenchmarkLauncher();
+  
   /* Singleton */
   private BenchmarkLauncher() {
     super();
@@ -74,11 +77,12 @@ public class BenchmarkLauncher implements Runnable {
   }
   
   /* CLI instance */
-  private static final CommandLine CLI = new CommandLine(new BenchmarkLauncher())
-      .setCommandName("benchmark").setResourceBundle(ResourceBundle.getBundle("cli-messages"))
-      .addSubcommand("help", new HelpCommand())
-      .addSubcommand("download-dataset", new DownloadDatasetBenchmark())
-      .addSubcommand("retrieve-study", new RetrieveStudyBenchmark())
-      .setExecutionExceptionHandler(createBenchmarkExceptionHandler());
+  private static final CommandLine CLI = new CommandLine(LAUNCHER).setCommandName("perfdiag")
+      .setResourceBundle(ResourceBundle.getBundle("cli-messages"))
+      .setExecutionExceptionHandler(createBenchmarkExceptionHandler())
+      .addSubcommand("benchmark", new CommandLine(LAUNCHER)
+        .addSubcommand("help", new HelpCommand())
+        .addSubcommand("download-dataset", new DownloadDatasetBenchmark())
+        .addSubcommand("retrieve-study", new RetrieveStudyBenchmark()));
   
 }

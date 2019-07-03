@@ -13,7 +13,7 @@ image sets.
 
 ## Environment settings
 
-In order to access Google Cloud Healthcare API endpoints you need create
+In order to access Google Cloud Healthcare API endpoints you need to create
 [service account](https://cloud.google.com/docs/authentication/production#obtaining_and_providing_service_account_credentials_manually)
 and setup [GOOGLE_APPLICATION_CREDENTIALS](https://cloud.google.com/docs/authentication/production#providing_service_account_credentials)
 environment variable.
@@ -22,16 +22,16 @@ environment variable.
 
 The command line syntax is `benchmark <BENCHMARK> <OPTIONS...>`; where `BENCHMARK`
 is the name of the benchmark and `OPTIONS` is a list of the following options:
-- `-i`, `--iterations`: Optional number of iterations how many times the routine is executed
+- `-i`, `--iterations` - Optional number of iterations how many times the routine is executed
   (default is 1).
-- `-t`, `--threads`: Optional maximum number of threads to run in parallel in download requests
+- `-t`, `--threads` - Optional maximum number of threads to run in parallel in download requests
   (default is 10).
-- `-o`, `--output`: Optional file to write the result to. If not provided, the result will be
+- `-o`, `--output` - Optional file to write the result to. If not provided, the result will be
   written to standard output.
-- `-p`, `--project`: Required ID of the GCP project.
-- `-l`, `--location`: Required ID of location (region).
-- `-d`, `--dataset`: Required ID of dataset in the project.
-- `-s`, `--dicom-store`: Required ID of DICOM store.
+- `-p`, `--project` - Required ID of the GCP project.
+- `-l`, `--location` - Required ID of location (region).
+- `-d`, `--dataset` - Required ID of dataset in the project.
+- `-s`, `--dicom-store` - Required ID of DICOM store.
 
 ## Download dataset benchmark
 
