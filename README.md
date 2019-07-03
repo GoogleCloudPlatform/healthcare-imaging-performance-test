@@ -24,7 +24,7 @@ The command line syntax is `benchmark <BENCHMARK> <OPTIONS...>`; where `BENCHMAR
 is the name of the benchmark and `OPTIONS` is a list of the following options:
 - `-i`, `--iterations` - Optional number of iterations how many times the routine is executed
   (default is 1).
-- `-t`, `--threads` - Optional maximum number of threads to run in parallel in download requests
+- `-t`, `--max-threads` - Optional maximum number of threads to run in parallel in download requests
   (default is 10).
 - `-o`, `--output` - Optional file to write the result to. If not provided, the result will be
   written to standard output.
@@ -45,7 +45,7 @@ Example of command line:
 
     benchmark download-dataset -i 3 -t 5 -o results.csv -p chc-nih-chest-xray -l us-central1 -d nih-chest-xray -s nih-chest-xray
 
-In the example above the `download-dataset` benchmark will be executed 3 times, will use 5 threads
+In the example above the `download-dataset` benchmark will be executed 3 times, will use maximum 5 threads
 to read studies in parallel from [NIH-Chest-Xray](https://cloud.google.com/healthcare/docs/resources/public-datasets/nih-chest#cloud-healthcare-api)
 public dataset and store gathered metrics to `results.csv` file.
 
@@ -75,7 +75,7 @@ Example of command line:
 
     benchmark retrieve-study -i 3 -t 5 -o results.csv -p chc-nih-chest-xray -l us-central1 -d nih-chest-xray -s nih-chest-xray -y 1.2.276.0.7230010.3.1.2.2148188175.13.1558046897.715757
 
-In the example above the `retrieve-study` benchmark will be executed 3 times, will use 5 threads
+In the example above the `retrieve-study` benchmark will be executed 3 times, will use maximum 5 threads
 to read instances of study with ID = `1.2.276.0.7230010.3.1.2.2148188175.13.1558046897.715757`
 in parallel from [NIH-Chest-Xray](https://cloud.google.com/healthcare/docs/resources/public-datasets/nih-chest#cloud-healthcare-api)
 public dataset and store gathered metrics to `results.csv` file.

@@ -63,8 +63,8 @@ public abstract class Benchmark extends BenchmarkMessages implements Runnable {
   protected void validateConfig() {
     if (commonConfig.getIterations() < 1) {
       throw BenchmarkException.iterationsInvalid(commonConfig.getIterations());
-    } else if (commonConfig.getThreads() < 1) {
-      throw BenchmarkException.threadsInvalid(commonConfig.getThreads());
+    } else if (commonConfig.getMaxThreads() < 1) {
+      throw BenchmarkException.threadsInvalid(commonConfig.getMaxThreads());
     }
   }
   

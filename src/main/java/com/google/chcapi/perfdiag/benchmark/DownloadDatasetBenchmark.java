@@ -83,10 +83,10 @@ public class DownloadDatasetBenchmark extends Benchmark {
   protected void runIteration(int iteration, PrintStream output) throws Exception {
     // Fetch list of available studies
     final List<Study> studies = fetchStudies();
-    printStudiesFound(studies.size(), commonConfig.getThreads());
+    printStudiesFound(studies.size(), commonConfig.getMaxThreads());
     
     // Create separate task for each study
-    final ExecutorService pool = Executors.newFixedThreadPool(commonConfig.getThreads());
+    final ExecutorService pool = Executors.newFixedThreadPool(commonConfig.getMaxThreads());
     final List<Callable<HttpRequestMetrics>> tasks = new ArrayList<>();
     for (Study study : studies) {
       final String studyId = study.getStudyUID();

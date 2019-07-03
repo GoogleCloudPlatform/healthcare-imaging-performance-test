@@ -83,10 +83,10 @@ public class RetrieveStudyBenchmark extends Benchmark {
   protected void runIteration(int iteration, PrintStream output) throws Exception {
     // Fetch list of available study instances
     final List<Instance> instances = fetchStudyInstances();
-    printInstancesFound(instances.size(), commonConfig.getThreads());
+    printInstancesFound(instances.size(), commonConfig.getMaxThreads());
     
     // Create separate task for each study instance
-    final ExecutorService pool = Executors.newFixedThreadPool(commonConfig.getThreads());
+    final ExecutorService pool = Executors.newFixedThreadPool(commonConfig.getMaxThreads());
     final List<Callable<HttpRequestMetrics>> tasks = new ArrayList<>();
     for (Instance instance : instances) {
       final String seriesId = instance.getSeriesUID();
