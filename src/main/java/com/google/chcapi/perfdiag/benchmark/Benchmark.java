@@ -27,7 +27,7 @@ import com.google.chcapi.perfdiag.profiler.HttpRequestProfilerFactory;
  * Base abstract class for benchmarks. Subclasses should implement two methods:
  * <ul>
  *   <li>{@link #runIteration(int, PrintStream)} which is invoked for each benchmark iteration.</li>
- *   <li>{@link #printMetrics()} which is invoked after all benchmark iterations.</li>
+ *   <li>{@link #printAggregates()} which is invoked after all benchmark iterations.</li>
  * </ul>
  * The {@link #validateConfig()} method may be overridden if benchmark requires additional
  * validation of command line options.
@@ -45,6 +45,11 @@ public abstract class Benchmark extends BenchmarkMessages implements Runnable {
   protected CommonConfig commonConfig;
   
   /**
+   * Latency of iteration in milliseconds.
+   */
+  protected long iterationLatency;
+  
+  /**
    * Benchmark entry point.
    */
   @Override
@@ -52,7 +57,7 @@ public abstract class Benchmark extends BenchmarkMessages implements Runnable {
     validateConfig();
     authorize();
     executeBenchmark();
-    printMetrics();
+    printAggregates();
   }
   
   /**
@@ -138,9 +143,9 @@ public abstract class Benchmark extends BenchmarkMessages implements Runnable {
   protected abstract void runIteration(int iteration, PrintStream output) throws Exception;
   
   /**
-   * Prints aggregated metrics to stdout include median, mean and percentiles calculated from the
-   * raw data when all iterations are done.
+   * Prints aggregates to stdout include median, mean and percentiles calculated from the raw data
+   * when all iterations are done.
    */
-  protected abstract void printMetrics();
+  protected abstract void printAggregates();
   
 }

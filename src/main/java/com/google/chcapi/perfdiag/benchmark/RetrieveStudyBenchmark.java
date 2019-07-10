@@ -20,6 +20,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.atomic.AtomicReference;
 
 import java.io.PrintStream;
 import java.io.ByteArrayOutputStream;
@@ -57,19 +58,9 @@ public class RetrieveStudyBenchmark extends Benchmark {
   protected DicomStudyConfig dicomStudyConfig;
   
   /**
-   * Metrics for query instances request.
+   * Total aggregates for all iterations.
    */
-  private HttpRequestMetrics queryInstancesMetrics;
-  
-  /**
-   * Metrics for first instance retrieved.
-   */
-  private HttpRequestMetrics firstInstanceMetrics;
-  
-  /**
-   * Aggregated metrics for retrieve study instance requests.
-   */
-  private HttpRequestAggregates retrieveStudySummary;
+  private final HttpRequestAggregates totalAggregates = new HttpRequestAggregates();
   
   /**
    * Retrieves DICOM study instances in parallel and stores metrics for each request to the
@@ -81,8 +72,17 @@ public class RetrieveStudyBenchmark extends Benchmark {
    */
   @Override
   protected void runIteration(int iteration, PrintStream output) throws Exception {
+    final long iterationStartTime = System.currentTimeMillis();
+    final AtomicReference<HttpRequestMetrics> firstResponseMetrics = new AtomicReference<>();
+    final AtomicReference<HttpRequestMetrics> firstInstanceMetrics = new AtomicReference<>();
+    
     // Fetch list of available study instances
-    final List<Instance> instances = fetchStudyInstances();
+    final HttpRequestProfiler queryInstancesRequest =
+        HttpRequestProfilerFactory.createListDicomStudyInstancesRequest(dicomStudyConfig);
+    final ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+    final HttpRequestMetrics queryInstancesMetrics = queryInstancesRequest.execute(buffer);
+    final List<Instance> instances = MAPPER.readValue(buffer.toByteArray(),
+        new TypeReference<List<Instance>>() {});
     printInstancesFound(instances.size(), commonConfig.getMaxThreads());
     
     // Create separate task for each study instance
@@ -94,16 +94,20 @@ public class RetrieveStudyBenchmark extends Benchmark {
       if (!(seriesId == null || instanceId == null)) {
         tasks.add(new Callable<HttpRequestMetrics>() {
           @Override public HttpRequestMetrics call() throws Exception {
+            // Execute request
             final HttpRequestProfiler request =
                 HttpRequestProfilerFactory.createRetrieveDicomStudyInstanceRequest(dicomStudyConfig,
                     seriesId, instanceId);
             final HttpRequestMetrics metrics = request.execute(NullOutputStream.NULL_OUTPUT_STREAM);
-            // Save first instance metrics if it is first request
-            synchronized (RetrieveStudyBenchmark.this) {
-              if (firstInstanceMetrics == null) {
-                firstInstanceMetrics = metrics;
-              }
-            }
+            
+            // Update first response and first instance metrics
+            firstResponseMetrics.updateAndGet(m -> {
+              return m == null || metrics.getResponseTime() < m.getResponseTime() ? metrics : m;
+            });
+            firstInstanceMetrics.updateAndGet(m -> {
+              return m == null || metrics.getEndTime() < m.getEndTime() ? metrics : m;
+            });
+            
             // Print progress
             printProgress();
             return metrics;
@@ -113,8 +117,10 @@ public class RetrieveStudyBenchmark extends Benchmark {
     }
     
     // Wait for completion and update metrics
-    retrieveStudySummary = new HttpRequestAggregates(tasks.size());
     final List<Future<HttpRequestMetrics>> futures = pool.invokeAll(tasks);
+    final HttpRequestAggregates iterationMetrics = new HttpRequestAggregates(tasks.size(),
+        System.currentTimeMillis() - iterationStartTime);
+    
     if (output == System.out) {
       // New line after progress
       output.println();
@@ -123,33 +129,25 @@ public class RetrieveStudyBenchmark extends Benchmark {
       try {
         final HttpRequestMetrics metrics = future.get();
         output.println(metrics.toCSVString(iteration));
-        retrieveStudySummary.addMetrics(metrics);
+        iterationMetrics.addMetrics(metrics);
       } catch (Exception e) {
         printRequestFailed(e);
       }
     }
+    
+    // Print metrics
+    totalAggregates.addAggregates(iterationMetrics);
+    printRetrieveStudyMetrics(System.currentTimeMillis() - iterationStartTime,
+        queryInstancesMetrics, firstResponseMetrics.get(), firstInstanceMetrics.get(),
+        iterationMetrics);
   }
   
   /**
-   * Prints gathered metrics to stdout.
+   * Prints calculated percentiles for all iterations to stdout.
    */
   @Override
-  protected void printMetrics() {
-    printRetrieveStudySummary(queryInstancesMetrics, firstInstanceMetrics, retrieveStudySummary);
-  }
-  
-  /**
-   * Queries DICOM store for available study instances and returns list of study instances.
-   * 
-   * @return List of available study instances.
-   * @throws Exception if an error occurred.
-   */
-  private List<Instance> fetchStudyInstances() throws Exception {
-    final HttpRequestProfiler request =
-        HttpRequestProfilerFactory.createListDicomStudyInstancesRequest(dicomStudyConfig);
-    final ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-    queryInstancesMetrics = request.execute(buffer);
-    return MAPPER.readValue(buffer.toByteArray(), new TypeReference<List<Instance>>() {});
+  protected void printAggregates() {
+    printPercentiles(totalAggregates);
   }
   
   /* Object mapper to convert JSON response */

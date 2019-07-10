@@ -16,8 +16,8 @@ package com.google.chcapi.perfdiag.benchmark;
 
 import java.util.ResourceBundle;
 
-import com.google.chcapi.perfdiag.profiler.HttpRequestAggregates;
 import com.google.chcapi.perfdiag.profiler.HttpRequestMetrics;
+import com.google.chcapi.perfdiag.profiler.HttpRequestAggregates;
 
 /**
  * Helper class used to format and print benchmark messages from resource bundle.
@@ -124,50 +124,73 @@ public abstract class BenchmarkMessages {
   }
   
   /**
-   * Prints retrieve study benchmark summary information to stdout.
+   * Prints percentiles statistics to stdout.
    * 
-   * @param queryInstancesMetrics Metrics of querying instances.
-   * @param firstInstanceMetrics Metrics of first instance retrieval.
-   * @param summaryMetrics Summary metrics.
+   * @param aggregates Total aggregates for all iterations.
    */
-  public static void printRetrieveStudySummary(HttpRequestMetrics queryInstancesMetrics,
-      HttpRequestMetrics firstInstanceMetrics,
-      HttpRequestAggregates summaryMetrics) {
-    print("message.retrieveStudySummary",
-        summaryMetrics.getRequestCount(),
-        summaryMetrics.getTotalLatency() + queryInstancesMetrics.getTotalLatency(),
-        queryInstancesMetrics.getTotalLatency(),
-        firstInstanceMetrics.getResponseLatency(),
-        firstInstanceMetrics.getReadLatency(),
-        summaryMetrics.getTotalLatency(),
-        summaryMetrics.getTotalBytesRead(),
-        summaryMetrics.getTotalTransferRate(),
-        summaryMetrics.getAverageLatency(),
-        summaryMetrics.getMedianReadLatency(),
-        summaryMetrics.getPercentileReadLatency());
+  public static void printPercentiles(HttpRequestAggregates aggregates) {
+    print("message.percentiles",
+        aggregates.getRequestCount(),
+        aggregates.getMinLatency(),
+        aggregates.getMaxLatency(),
+        aggregates.getAverageLatency(),
+        aggregates.getPercentileLatency(HttpRequestAggregates.MEDIAN),
+        aggregates.getPercentileLatency(HttpRequestAggregates.P1),
+        aggregates.getPercentileLatency(HttpRequestAggregates.P2),
+        aggregates.getPercentileLatency(HttpRequestAggregates.P5),
+        aggregates.getPercentileLatency(HttpRequestAggregates.P10),
+        aggregates.getPercentileLatency(HttpRequestAggregates.P90),
+        aggregates.getPercentileLatency(HttpRequestAggregates.P95),
+        aggregates.getPercentileLatency(HttpRequestAggregates.P98),
+        aggregates.getPercentileLatency(HttpRequestAggregates.P99));
   }
   
   /**
-   * Prints download dataset benchmark summary information to stdout.
+   * Prints metrics of retrieve study benchmark to stdout.
    * 
-   * @param queryStudiesMetrics Metrics of querying studies.
-   * @param firstStudyMetrics Metrics of first study retrieval.
-   * @param summaryMetrics Summary metrics.
+   * @param totalLatency How long an iteration takes to finish in milliseconds.
+   * @param queryInstancesMetrics Metrics of querying instances.
+   * @param firstResponseMetrics Metrics of first byte received.
+   * @param firstInstanceMetrics Metrics of first instance read.
+   * @param iterationMetrics Metrics of whole iteration.
    */
-  public static void printDownloadDatasetSummary(HttpRequestMetrics queryStudiesMetrics,
+  public static void printRetrieveStudyMetrics(long totalLatency,
+      HttpRequestMetrics queryInstancesMetrics,
+      HttpRequestMetrics firstResponseMetrics,
+      HttpRequestMetrics firstInstanceMetrics,
+      HttpRequestAggregates iterationMetrics) {
+    print("message.retrieveStudyMetrics",
+        totalLatency,
+        queryInstancesMetrics.getTotalLatency(),
+        firstResponseMetrics.getResponseLatency(),
+        firstInstanceMetrics.getTotalLatency(),
+        iterationMetrics.getTotalLatency(),
+        iterationMetrics.getTotalBytesRead(),
+        iterationMetrics.getTotalTransferRate());
+  }
+  
+  /**
+   * Prints metrics of download dataset benchmark to stdout.
+   * 
+   * @param iterationLatency How long an iteration takes to finish in milliseconds.
+   * @param queryStudiesMetrics Metrics of querying studies.
+   * @param firstResponseMetrics Metrics of first byte received.
+   * @param firstStudyMetrics Metrics of first study read.
+   * @param iterationMetrics Metrics of whole iteration.
+   */
+  public static void printDownloadDatasetMetrics(long iterationLatency,
+      HttpRequestMetrics queryStudiesMetrics,
+      HttpRequestMetrics firstResponseMetrics,
       HttpRequestMetrics firstStudyMetrics,
-      HttpRequestAggregates summaryMetrics) {
-    print("message.downloadDatasetSummary",
-        summaryMetrics.getRequestCount(),
-        summaryMetrics.getTotalLatency() + queryStudiesMetrics.getTotalLatency(),
+      HttpRequestAggregates iterationMetrics) {
+    print("message.downloadDatasetMetrics",
+        iterationLatency,
         queryStudiesMetrics.getTotalLatency(),
-        firstStudyMetrics.getResponseLatency(),
-        summaryMetrics.getTotalLatency(),
-        summaryMetrics.getTotalBytesRead(),
-        summaryMetrics.getTotalTransferRate(),
-        summaryMetrics.getAverageLatency(),
-        summaryMetrics.getMedianReadLatency(),
-        summaryMetrics.getPercentileReadLatency());
+        firstResponseMetrics.getResponseLatency(),
+        firstStudyMetrics.getTotalLatency(),
+        iterationMetrics.getTotalLatency(),
+        iterationMetrics.getTotalBytesRead(),
+        iterationMetrics.getTotalTransferRate());
   }
   
 }

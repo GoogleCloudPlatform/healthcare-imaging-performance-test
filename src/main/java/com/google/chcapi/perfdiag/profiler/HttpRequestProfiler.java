@@ -87,9 +87,9 @@ public class HttpRequestProfiler {
    */
   private HttpRequestMetrics doExecute(OutputStream stream) throws IOException {
     // Execute request and measure metrics
-    long timestamp = System.currentTimeMillis();
+    final long startTime = System.currentTimeMillis();
     try (CloseableHttpResponse response = HTTP_CLIENT.execute(request)) {
-      final long responseLatency = System.currentTimeMillis() - timestamp;
+      final long responseTime = System.currentTimeMillis();
       
       // Check status code
       final int status = response.getStatusLine().getStatusCode();
@@ -101,15 +101,13 @@ public class HttpRequestProfiler {
       // Does content exist?
       if (status == HttpStatus.SC_NO_CONTENT) {
         // No content
-        return new HttpRequestMetrics(responseLatency, 0L, 0L);
+        return new HttpRequestMetrics(startTime, responseTime, System.currentTimeMillis(), 0L);
       }
       
       // Read content
-      timestamp = System.currentTimeMillis();
       try (InputStream input = response.getEntity().getContent()) {
         final long bytesRead = IOUtils.copyLarge(input, stream);
-        final long readLatency = System.currentTimeMillis() - timestamp;
-        return new HttpRequestMetrics(responseLatency, readLatency, bytesRead);
+        return new HttpRequestMetrics(startTime, responseTime, System.currentTimeMillis(), bytesRead);
       }
     }
   }

@@ -22,32 +22,66 @@ package com.google.chcapi.perfdiag.profiler;
 public class HttpRequestMetrics {
   
   /**
-   * Latency of first byte received in milliseconds.
+   * Time in milliseconds when request has been sent.
    */
-  private long responseLatency;
+  private final long startTime;
   
   /**
-   * Latency of all bytes received in milliseconds.
+   * Time in milliseconds when response has been received.
    */
-  private long readLatency;
+  private final long responseTime;
+  
+  /**
+   * Time in milliseconds when response content has been retrieved.
+   */
+  private final long endTime;
   
   /**
    * Number of bytes read.
    */
-  private long bytesRead;
+  private final long bytesRead;
   
   /**
-   * Constructs a new HTTP request metrics with the specified response latency, read latency and
-   * number of bytes read.
+   * Constructs a new HTTP request metrics with the specified start time, response time, end time
+   * and number of bytes read.
    * 
-   * @param responseLatency Latency of first byte received in milliseconds.
-   * @param readLatency Latency of all bytes received in milliseconds.
+   * @param startTime Time in milliseconds when request has been sent.
+   * @param responseTime Time in milliseconds when response has been received.
+   * @param endTime Time in milliseconds when response content has been retrieved.
    * @param bytesRead Number of bytes read.
    */
-  public HttpRequestMetrics(long responseLatency, long readLatency, long bytesRead) {
-    this.responseLatency = responseLatency;
-    this.readLatency = readLatency;
+  public HttpRequestMetrics(long startTime, long responseTime, long endTime, long bytesRead) {
+    this.startTime = startTime;
+    this.responseTime = responseTime;
+    this.endTime = endTime;
     this.bytesRead = bytesRead;
+  }
+  
+  /**
+   * Returns time in milliseconds when request has been sent.
+   * 
+   * @return Time in milliseconds when request has been sent.
+   */
+  public long getStartTime() {
+    return startTime;
+  }
+  
+  /**
+   * Returns time in milliseconds when response has been received.
+   * 
+   * @return Time in milliseconds when response has been received.
+   */
+  public long getResponseTime() {
+    return responseTime;
+  }
+  
+  /**
+   * Returns time in milliseconds when response content has been retrieved.
+   * 
+   * @return Time in milliseconds when response content has been retrieved.
+   */
+  public long getEndTime() {
+    return endTime;
   }
   
   /**
@@ -56,7 +90,7 @@ public class HttpRequestMetrics {
    * @return Latency of first byte received in milliseconds.
    */
   public long getResponseLatency() {
-    return responseLatency;
+    return responseTime - startTime;
   }
   
   /**
@@ -65,16 +99,16 @@ public class HttpRequestMetrics {
    * @return Latency of all bytes received in milliseconds.
    */
   public long getReadLatency() {
-    return readLatency;
+    return endTime - responseTime;
   }
   
   /**
-   * Returns total latency in milliseconds (response latency + read latency).
+   * Returns total request latency in milliseconds.
    * 
-   * @return Total latency in milliseconds.
+   * @return Total request latency in milliseconds.
    */
   public long getTotalLatency() {
-    return responseLatency + readLatency;
+    return endTime - startTime;
   }
   
   /**
@@ -92,7 +126,7 @@ public class HttpRequestMetrics {
    * @return Bytes read per second.
    */
   public double getTransferRate() {
-    return readLatency > 0L ? (double) bytesRead / (double) getTotalLatency() * 1000.0 : 0.0;
+    return (double) getBytesRead() / (double) getTotalLatency() * 1000.0;
   }
   
   /**

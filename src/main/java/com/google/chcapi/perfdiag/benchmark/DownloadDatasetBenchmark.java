@@ -20,6 +20,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.atomic.AtomicReference;
 
 import java.io.PrintStream;
 import java.io.ByteArrayOutputStream;
@@ -29,9 +30,9 @@ import picocli.CommandLine.Command;
 
 import org.apache.commons.io.output.NullOutputStream;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import com.google.chcapi.perfdiag.model.Study;
 import com.google.chcapi.perfdiag.benchmark.config.DicomStoreConfig;
@@ -57,19 +58,9 @@ public class DownloadDatasetBenchmark extends Benchmark {
   protected DicomStoreConfig dicomStoreConfig;
   
   /**
-   * Metrics for query studies request.
+   * Total aggregates for all iterations.
    */
-  private HttpRequestMetrics queryStudiesMetrics;
-  
-  /**
-   * Metrics for first study retrieved.
-   */
-  private HttpRequestMetrics firstStudyMetrics;
-  
-  /**
-   * Aggregated statistics for retrieve study requests.
-   */
-  private HttpRequestAggregates downloadDatasetSummary;
+  private final HttpRequestAggregates totalAggregates = new HttpRequestAggregates();
   
   /**
    * Retrieves DICOM studies in parallel and stores metrics for each request to the specified
@@ -81,8 +72,17 @@ public class DownloadDatasetBenchmark extends Benchmark {
    */
   @Override
   protected void runIteration(int iteration, PrintStream output) throws Exception {
+    final long iterationStartTime = System.currentTimeMillis();
+    final AtomicReference<HttpRequestMetrics> firstResponseMetrics = new AtomicReference<>();
+    final AtomicReference<HttpRequestMetrics> firstStudyMetrics = new AtomicReference<>();
+    
     // Fetch list of available studies
-    final List<Study> studies = fetchStudies();
+    final HttpRequestProfiler queryStudiesRequest =
+        HttpRequestProfilerFactory.createListDicomStudiesRequest(dicomStoreConfig);
+    final ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+    final HttpRequestMetrics queryStudiesMetrics = queryStudiesRequest.execute(buffer);
+    final List<Study> studies = MAPPER.readValue(buffer.toByteArray(),
+        new TypeReference<List<Study>>() {});
     printStudiesFound(studies.size(), commonConfig.getMaxThreads());
     
     // Create separate task for each study
@@ -93,15 +93,19 @@ public class DownloadDatasetBenchmark extends Benchmark {
       if (studyId != null) {
         tasks.add(new Callable<HttpRequestMetrics>() {
           @Override public HttpRequestMetrics call() throws Exception {
+            // Execute request
             final HttpRequestProfiler request =
                 HttpRequestProfilerFactory.createRetrieveDicomStudyRequest(dicomStoreConfig, studyId);
             final HttpRequestMetrics metrics = request.execute(NullOutputStream.NULL_OUTPUT_STREAM);
-            // Save first instance metrics if it is first request
-            synchronized (DownloadDatasetBenchmark.this) {
-              if (firstStudyMetrics == null) {
-                firstStudyMetrics = metrics;
-              }
-            }
+            
+            // Update first response and first study metrics
+            firstResponseMetrics.updateAndGet(m -> {
+              return m == null || metrics.getResponseTime() < m.getResponseTime() ? metrics : m;
+            });
+            firstStudyMetrics.updateAndGet(m -> {
+              return m == null || metrics.getEndTime() < m.getEndTime() ? metrics : m;
+            });
+            
             // Print progress
             printProgress();
             return metrics;
@@ -111,8 +115,10 @@ public class DownloadDatasetBenchmark extends Benchmark {
     }
     
     // Wait for completion and update metrics
-    downloadDatasetSummary = new HttpRequestAggregates(tasks.size());
     final List<Future<HttpRequestMetrics>> futures = pool.invokeAll(tasks);
+    final HttpRequestAggregates iterationMetrics = new HttpRequestAggregates(tasks.size(),
+        System.currentTimeMillis() - iterationStartTime);
+    
     if (output == System.out) {
       // New line after progress
       output.println();
@@ -121,33 +127,25 @@ public class DownloadDatasetBenchmark extends Benchmark {
       try {
         final HttpRequestMetrics metrics = future.get();
         output.println(metrics.toCSVString(iteration));
-        downloadDatasetSummary.addMetrics(metrics);
+        iterationMetrics.addMetrics(metrics);
       } catch (Exception e) {
         printRequestFailed(e);
       }
     }
+    
+    // Print metrics
+    totalAggregates.addAggregates(iterationMetrics);
+    printDownloadDatasetMetrics(System.currentTimeMillis() - iterationStartTime,
+        queryStudiesMetrics, firstResponseMetrics.get(), firstStudyMetrics.get(),
+        iterationMetrics);
   }
   
   /**
-   * Prints gathered metrics to stdout.
+   * Prints calculated percentiles for all iterations to stdout.
    */
   @Override
-  protected void printMetrics() {
-    printDownloadDatasetSummary(queryStudiesMetrics, firstStudyMetrics, downloadDatasetSummary);
-  }
-  
-  /**
-   * Queries DICOM store for available studies and returns list of studies.
-   * 
-   * @return List of available studies.
-   * @throws Exception if an error occurred.
-   */
-  private List<Study> fetchStudies() throws Exception {
-    final HttpRequestProfiler request =
-        HttpRequestProfilerFactory.createListDicomStudiesRequest(dicomStoreConfig);
-    final ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-    queryStudiesMetrics = request.execute(buffer);
-    return MAPPER.readValue(buffer.toByteArray(), new TypeReference<List<Study>>() {});
+  protected void printAggregates() {
+    printPercentiles(totalAggregates);
   }
   
   /* Object mapper to convert JSON response */
