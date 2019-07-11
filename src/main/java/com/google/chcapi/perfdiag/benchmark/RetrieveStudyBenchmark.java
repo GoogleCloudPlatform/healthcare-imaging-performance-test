@@ -72,7 +72,6 @@ public class RetrieveStudyBenchmark extends Benchmark {
    */
   @Override
   protected void runIteration(int iteration, PrintStream output) throws Exception {
-    final long iterationStartTime = System.currentTimeMillis();
     final AtomicReference<HttpRequestMetrics> firstResponseMetrics = new AtomicReference<>();
     final AtomicReference<HttpRequestMetrics> firstInstanceMetrics = new AtomicReference<>();
     
@@ -80,6 +79,7 @@ public class RetrieveStudyBenchmark extends Benchmark {
     final HttpRequestProfiler queryInstancesRequest =
         HttpRequestProfilerFactory.createListDicomStudyInstancesRequest(dicomStudyConfig);
     final ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+    final long iterationStartTime = System.currentTimeMillis();
     final HttpRequestMetrics queryInstancesMetrics = queryInstancesRequest.execute(buffer);
     final List<Instance> instances = MAPPER.readValue(buffer.toByteArray(),
         new TypeReference<List<Instance>>() {});
@@ -137,9 +137,9 @@ public class RetrieveStudyBenchmark extends Benchmark {
     
     // Print metrics
     totalAggregates.addAggregates(iterationMetrics);
-    printRetrieveStudyMetrics(System.currentTimeMillis() - iterationStartTime,
-        queryInstancesMetrics, firstResponseMetrics.get(), firstInstanceMetrics.get(),
-        iterationMetrics);
+    iterationMetrics.addMetrics(queryInstancesMetrics);
+    printRetrieveStudyMetrics(queryInstancesMetrics, firstResponseMetrics.get(),
+        firstInstanceMetrics.get(), iterationMetrics);
   }
   
   /**
@@ -147,7 +147,7 @@ public class RetrieveStudyBenchmark extends Benchmark {
    */
   @Override
   protected void printAggregates() {
-    printPercentiles(totalAggregates);
+    printPercentiles(commonConfig.getIterations(), totalAggregates);
   }
   
   /* Object mapper to convert JSON response */

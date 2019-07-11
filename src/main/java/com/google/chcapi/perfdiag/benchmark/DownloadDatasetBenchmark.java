@@ -72,7 +72,6 @@ public class DownloadDatasetBenchmark extends Benchmark {
    */
   @Override
   protected void runIteration(int iteration, PrintStream output) throws Exception {
-    final long iterationStartTime = System.currentTimeMillis();
     final AtomicReference<HttpRequestMetrics> firstResponseMetrics = new AtomicReference<>();
     final AtomicReference<HttpRequestMetrics> firstStudyMetrics = new AtomicReference<>();
     
@@ -80,6 +79,7 @@ public class DownloadDatasetBenchmark extends Benchmark {
     final HttpRequestProfiler queryStudiesRequest =
         HttpRequestProfilerFactory.createListDicomStudiesRequest(dicomStoreConfig);
     final ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+    final long iterationStartTime = System.currentTimeMillis();
     final HttpRequestMetrics queryStudiesMetrics = queryStudiesRequest.execute(buffer);
     final List<Study> studies = MAPPER.readValue(buffer.toByteArray(),
         new TypeReference<List<Study>>() {});
@@ -135,9 +135,9 @@ public class DownloadDatasetBenchmark extends Benchmark {
     
     // Print metrics
     totalAggregates.addAggregates(iterationMetrics);
-    printDownloadDatasetMetrics(System.currentTimeMillis() - iterationStartTime,
-        queryStudiesMetrics, firstResponseMetrics.get(), firstStudyMetrics.get(),
-        iterationMetrics);
+    iterationMetrics.addMetrics(queryStudiesMetrics);
+    printDownloadDatasetMetrics(queryStudiesMetrics, firstResponseMetrics.get(),
+        firstStudyMetrics.get(), iterationMetrics);
   }
   
   /**
@@ -145,7 +145,7 @@ public class DownloadDatasetBenchmark extends Benchmark {
    */
   @Override
   protected void printAggregates() {
-    printPercentiles(totalAggregates);
+    printPercentiles(commonConfig.getIterations(), totalAggregates);
   }
   
   /* Object mapper to convert JSON response */

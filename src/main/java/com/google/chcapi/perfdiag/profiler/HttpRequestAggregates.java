@@ -16,6 +16,8 @@ package com.google.chcapi.perfdiag.profiler;
 
 import java.util.Arrays;
 
+import org.apache.commons.math3.stat.descriptive.moment.Mean;
+import org.apache.commons.math3.stat.descriptive.moment.StandardDeviation;
 import org.apache.commons.math3.stat.descriptive.rank.Percentile;
 
 /**
@@ -103,6 +105,11 @@ public class HttpRequestAggregates {
   private double[] requestLatencies;
   
   /**
+   * The mean cached instance.
+   */
+  private Double mean;
+  
+  /**
    * The {@code Percentile} cached instance.
    */
   private Percentile percentile;
@@ -164,12 +171,27 @@ public class HttpRequestAggregates {
   }
   
   /**
-   * Returns average latency of all requests in milliseconds.
+   * Returns mean of all requests.
    * 
-   * @return Average latency of all requests in milliseconds.
+   * @return Mean of all requests.
    */
-  public double getAverageLatency() {
-    return requestCount > 0 ? (double) totalLatency / (double) requestCount : 0.0;
+  public double getMean() {
+    if (requestCount > 0) {
+      if (mean == null) {
+        mean = new Mean().evaluate(requestLatencies, 0, requestCount);
+      }
+      return mean;
+    }
+    return 0.0;
+  }
+  
+  /**
+   * Returns standard deviation of all requests.
+   * 
+   * @return Standard deviation of all requests.
+   */
+  public double getStddev() {
+    return new StandardDeviation().evaluate(requestLatencies, getMean(), 0, requestCount);
   }
   
   /**
@@ -178,7 +200,7 @@ public class HttpRequestAggregates {
    * @param p The percentile to evaluate.
    * @return Evaluated percentile.
    */
-  public double getPercentileLatency(double p) {
+  public double getPercentile(double p) {
     if (percentile == null) {
       percentile = new Percentile();
       Arrays.sort(requestLatencies, 0, requestCount);
@@ -225,6 +247,7 @@ public class HttpRequestAggregates {
       requestLatencies = Arrays.copyOf(requestLatencies, requestCount * 3 / 2 + 1);
     }
     requestLatencies[requestCount++] = latency;
+    mean = null;
     percentile = null;
   }
   
@@ -251,6 +274,7 @@ public class HttpRequestAggregates {
     System.arraycopy(aggregates.requestLatencies, 0, requestLatencies, requestCount,
         aggregates.requestCount);
     requestCount = newRequestCount;
+    mean = null;
     percentile = null;
   }
   
