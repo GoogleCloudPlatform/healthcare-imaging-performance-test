@@ -16,8 +16,7 @@ package com.google.chcapi.perfdiag.benchmark;
 
 import java.util.ResourceBundle;
 
-import com.google.chcapi.perfdiag.profiler.HttpRequestMetrics;
-import com.google.chcapi.perfdiag.profiler.HttpRequestAggregates;
+import com.google.chcapi.perfdiag.benchmark.stats.LatencyAggregates;
 
 /**
  * Helper class used to format and print benchmark messages from resource bundle.
@@ -124,71 +123,145 @@ public abstract class BenchmarkMessages {
   }
   
   /**
-   * Prints percentiles statistics to stdout.
+   * Prints metrics of retrieve study iteration to stdout.
    * 
-   * @param count Number of iterations.
-   * @param aggregates Total aggregates for all iterations.
+   * @param queryInstancesLatency Latency of querying instances.
+   * @param firstResponseLatency Latency of first byte received.
+   * @param firstInstanceLatency Latency of reading first instance.
+   * @param totalLatency Latency of reading whole study.
+   * @param totalBytesRead Total bytes read.
    */
-  public static void printPercentiles(int count, HttpRequestAggregates aggregates) {
-    print("message.percentiles",
-        count,
-        aggregates.getMinLatency(),
-        aggregates.getMaxLatency(),
-        aggregates.getMean(),
-        aggregates.getStddev(),
-        aggregates.getPercentile(HttpRequestAggregates.MEDIAN),
-        aggregates.getPercentile(HttpRequestAggregates.P1),
-        aggregates.getPercentile(HttpRequestAggregates.P2),
-        aggregates.getPercentile(HttpRequestAggregates.P5),
-        aggregates.getPercentile(HttpRequestAggregates.P10),
-        aggregates.getPercentile(HttpRequestAggregates.P90),
-        aggregates.getPercentile(HttpRequestAggregates.P95),
-        aggregates.getPercentile(HttpRequestAggregates.P98),
-        aggregates.getPercentile(HttpRequestAggregates.P99));
-  }
-  
-  /**
-   * Prints metrics of retrieve study benchmark to stdout.
-   * 
-   * @param queryInstancesMetrics Metrics of querying instances.
-   * @param firstResponseMetrics Metrics of first byte received.
-   * @param firstInstanceMetrics Metrics of first instance read.
-   * @param iterationMetrics Metrics of whole iteration.
-   */
-  public static void printRetrieveStudyMetrics(
-      HttpRequestMetrics queryInstancesMetrics,
-      HttpRequestMetrics firstResponseMetrics,
-      HttpRequestMetrics firstInstanceMetrics,
-      HttpRequestAggregates iterationMetrics) {
+  public static void printRetrieveStudyMetrics(long queryInstancesLatency,
+      long firstResponseLatency, long firstInstanceLatency, long totalLatency, long totalBytesRead) {
     print("message.retrieveStudyMetrics",
-        queryInstancesMetrics.getTotalLatency(),
-        firstResponseMetrics.getResponseLatency(),
-        firstInstanceMetrics.getTotalLatency(),
-        iterationMetrics.getTotalLatency(),
-        iterationMetrics.getTotalBytesRead(),
-        iterationMetrics.getTotalTransferRate());
+        queryInstancesLatency,
+        firstResponseLatency,
+        firstInstanceLatency,
+        totalLatency,
+        totalBytesRead,
+        (double) totalBytesRead / (double) totalLatency * 1000.0);
   }
   
   /**
-   * Prints metrics of download dataset benchmark to stdout.
+   * Prints aggregates of retrieve study benchmark to stdout.
    * 
-   * @param queryStudiesMetrics Metrics of querying studies.
-   * @param firstResponseMetrics Metrics of first byte received.
-   * @param firstStudyMetrics Metrics of first study read.
-   * @param iterationMetrics Metrics of whole iteration.
+   * @param queryInstancesAggregates Aggregates for latency of querying instances.
+   * @param firstResponseAggregates Aggregates for latency of first byte received.
+   * @param firstInstanceAggregates Aggregates for latency of reading first instance.
+   * @param totalAggregates Aggregates for latency of downloading the whole study.
    */
-  public static void printDownloadDatasetMetrics(
-      HttpRequestMetrics queryStudiesMetrics,
-      HttpRequestMetrics firstResponseMetrics,
-      HttpRequestMetrics firstStudyMetrics,
-      HttpRequestAggregates iterationMetrics) {
+  public static void printRetrieveStudyAggregates(
+      LatencyAggregates queryInstancesAggregates,
+      LatencyAggregates firstResponseAggregates,
+      LatencyAggregates firstInstanceAggregates,
+      LatencyAggregates totalAggregates) {
+    print("message.retrieveStudyAggregatesHeader");
+    printAggregates(queryInstancesAggregates, firstResponseAggregates, firstInstanceAggregates, totalAggregates);
+  }
+  
+  /**
+   * Prints metrics of download dataset iteration to stdout.
+   * 
+   * @param queryStudiesLatency Latency of querying studies.
+   * @param firstResponseLatency Latency of first byte received.
+   * @param firstStudyLatency Latency of reading first study.
+   * @param totalLatency Latency of downloading the whole dataset.
+   * @param totalBytesRead Total bytes read.
+   */
+  public static void printDownloadDatasetMetrics(long queryStudiesLatency,
+      long firstResponseLatency, long firstStudyLatency, long totalLatency, long totalBytesRead) {
     print("message.downloadDatasetMetrics",
-        queryStudiesMetrics.getTotalLatency(),
-        firstResponseMetrics.getResponseLatency(),
-        firstStudyMetrics.getTotalLatency(),
-        iterationMetrics.getTotalLatency(),
-        iterationMetrics.getTotalBytesRead(),
-        iterationMetrics.getTotalTransferRate());
+        queryStudiesLatency,
+        firstResponseLatency,
+        firstStudyLatency,
+        totalLatency,
+        totalBytesRead,
+        (double) totalBytesRead / (double) totalLatency * 1000.0);
+  }
+  
+  /**
+   * Prints aggregates of download dataset benchmark to stdout.
+   * 
+   * @param queryStudiesAggregates Aggregates for latency of querying studies.
+   * @param firstResponseAggregates Aggregates for latency of first byte received.
+   * @param firstStudyAggregates Aggregates for latency of reading first study.
+   * @param totalAggregates Aggregates for latency of downloading the whole dataset.
+   */
+  public static void printDownloadDatasetAggregates(
+      LatencyAggregates queryStudiesAggregates,
+      LatencyAggregates firstResponseAggregates,
+      LatencyAggregates firstStudyAggregates,
+      LatencyAggregates totalAggregates) {
+    print("message.downloadDatasetAggregatesHeader");
+    printAggregates(queryStudiesAggregates, firstResponseAggregates, firstStudyAggregates, totalAggregates);
+  }
+  
+  /**
+   * Prints aggregates of a benchmark to stdout.
+   * 
+   * @param queryIDsAggregates Aggregates for latency of querying IDs.
+   * @param firstResponseAggregates Aggregates for latency of first byte received.
+   * @param firstDownloadAggregates Aggregates for latency of reading first item.
+   * @param totalAggregates Aggregates for latency of downloading the whole dataset.
+   */
+  public static void printAggregates(
+      LatencyAggregates queryIDsAggregates,
+      LatencyAggregates firstResponseAggregates,
+      LatencyAggregates firstDownloadAggregates,
+      LatencyAggregates totalAggregates) {
+    print("message.aggregates",
+        queryIDsAggregates.getMin(),
+        firstResponseAggregates.getMin(),
+        firstDownloadAggregates.getMin(),
+        totalAggregates.getMin(),
+        queryIDsAggregates.getMax(),
+        firstResponseAggregates.getMax(),
+        firstDownloadAggregates.getMax(),
+        totalAggregates.getMax(),
+        queryIDsAggregates.getMean(),
+        firstResponseAggregates.getMean(),
+        firstDownloadAggregates.getMean(),
+        totalAggregates.getMean(),
+        queryIDsAggregates.getStddev(),
+        firstResponseAggregates.getStddev(),
+        firstDownloadAggregates.getStddev(),
+        totalAggregates.getStddev(),
+        queryIDsAggregates.getPercentile(LatencyAggregates.MEDIAN),
+        firstResponseAggregates.getPercentile(LatencyAggregates.MEDIAN),
+        firstDownloadAggregates.getPercentile(LatencyAggregates.MEDIAN),
+        totalAggregates.getPercentile(LatencyAggregates.MEDIAN),
+        queryIDsAggregates.getPercentile(LatencyAggregates.P1),
+        firstResponseAggregates.getPercentile(LatencyAggregates.P1),
+        firstDownloadAggregates.getPercentile(LatencyAggregates.P1),
+        totalAggregates.getPercentile(LatencyAggregates.P1),
+        queryIDsAggregates.getPercentile(LatencyAggregates.P2),
+        firstResponseAggregates.getPercentile(LatencyAggregates.P2),
+        firstDownloadAggregates.getPercentile(LatencyAggregates.P2),
+        totalAggregates.getPercentile(LatencyAggregates.P2),
+        queryIDsAggregates.getPercentile(LatencyAggregates.P5),
+        firstResponseAggregates.getPercentile(LatencyAggregates.P5),
+        firstDownloadAggregates.getPercentile(LatencyAggregates.P5),
+        totalAggregates.getPercentile(LatencyAggregates.P5),
+        queryIDsAggregates.getPercentile(LatencyAggregates.P10),
+        firstResponseAggregates.getPercentile(LatencyAggregates.P10),
+        firstDownloadAggregates.getPercentile(LatencyAggregates.P10),
+        totalAggregates.getPercentile(LatencyAggregates.P10),
+        queryIDsAggregates.getPercentile(LatencyAggregates.P90),
+        firstResponseAggregates.getPercentile(LatencyAggregates.P90),
+        firstDownloadAggregates.getPercentile(LatencyAggregates.P90),
+        totalAggregates.getPercentile(LatencyAggregates.P90),
+        queryIDsAggregates.getPercentile(LatencyAggregates.P95),
+        firstResponseAggregates.getPercentile(LatencyAggregates.P95),
+        firstDownloadAggregates.getPercentile(LatencyAggregates.P95),
+        totalAggregates.getPercentile(LatencyAggregates.P95),
+        queryIDsAggregates.getPercentile(LatencyAggregates.P98),
+        firstResponseAggregates.getPercentile(LatencyAggregates.P98),
+        firstDownloadAggregates.getPercentile(LatencyAggregates.P98),
+        totalAggregates.getPercentile(LatencyAggregates.P98),
+        queryIDsAggregates.getPercentile(LatencyAggregates.P99),
+        firstResponseAggregates.getPercentile(LatencyAggregates.P99),
+        firstDownloadAggregates.getPercentile(LatencyAggregates.P99),
+        totalAggregates.getPercentile(LatencyAggregates.P99));
   }
   
 }

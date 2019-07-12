@@ -36,10 +36,10 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 
 import com.google.chcapi.perfdiag.model.Instance;
 import com.google.chcapi.perfdiag.benchmark.config.DicomStudyConfig;
+import com.google.chcapi.perfdiag.benchmark.stats.LatencyAggregates;
 import com.google.chcapi.perfdiag.profiler.HttpRequestProfiler;
 import com.google.chcapi.perfdiag.profiler.HttpRequestProfilerFactory;
 import com.google.chcapi.perfdiag.profiler.HttpRequestMetrics;
-import com.google.chcapi.perfdiag.profiler.HttpRequestAggregates;
 
 /**
  * This benchmark shows how fast it can be to retrieve a whole study with Google Cloud Healthcare
@@ -58,9 +58,37 @@ public class RetrieveStudyBenchmark extends Benchmark {
   protected DicomStudyConfig dicomStudyConfig;
   
   /**
-   * Total aggregates for all iterations.
+   * Aggregates for latency of querying instances.
    */
-  private final HttpRequestAggregates totalAggregates = new HttpRequestAggregates();
+  private LatencyAggregates queryInstancesAggregates;
+  
+  /**
+   * Aggregates for latency of first byte received.
+   */
+  private LatencyAggregates firstResponseAggregates;
+  
+  /**
+   * Aggregates for latency of reading first instance.
+   */
+  private LatencyAggregates firstInstanceAggregates;
+  
+  /**
+   * Aggregates for latency of reading whole study.
+   */
+  private LatencyAggregates totalAggregates;
+  
+  /**
+   * Validates configuration and initializes aggregates.
+   */
+  @Override
+  protected void validateConfig() {
+    super.validateConfig();
+    final int iterations = commonConfig.getIterations();
+    queryInstancesAggregates = new LatencyAggregates(iterations);
+    firstResponseAggregates = new LatencyAggregates(iterations);
+    firstInstanceAggregates = new LatencyAggregates(iterations);
+    totalAggregates = new LatencyAggregates(iterations);
+  }
   
   /**
    * Retrieves DICOM study instances in parallel and stores metrics for each request to the
@@ -85,69 +113,79 @@ public class RetrieveStudyBenchmark extends Benchmark {
         new TypeReference<List<Instance>>() {});
     printInstancesFound(instances.size(), commonConfig.getMaxThreads());
     
-    // Create separate task for each study instance
-    final ExecutorService pool = Executors.newFixedThreadPool(commonConfig.getMaxThreads());
-    final List<Callable<HttpRequestMetrics>> tasks = new ArrayList<>();
-    for (Instance instance : instances) {
-      final String seriesId = instance.getSeriesUID();
-      final String instanceId = instance.getInstanceUID();
-      if (!(seriesId == null || instanceId == null)) {
-        tasks.add(new Callable<HttpRequestMetrics>() {
-          @Override public HttpRequestMetrics call() throws Exception {
-            // Execute request
-            final HttpRequestProfiler request =
-                HttpRequestProfilerFactory.createRetrieveDicomStudyInstanceRequest(dicomStudyConfig,
-                    seriesId, instanceId);
-            final HttpRequestMetrics metrics = request.execute(NullOutputStream.NULL_OUTPUT_STREAM);
-            
-            // Update first response and first instance metrics
-            firstResponseMetrics.updateAndGet(m -> {
-              return m == null || metrics.getResponseTime() < m.getResponseTime() ? metrics : m;
-            });
-            firstInstanceMetrics.updateAndGet(m -> {
-              return m == null || metrics.getEndTime() < m.getEndTime() ? metrics : m;
-            });
-            
-            // Print progress
-            printProgress();
-            return metrics;
-          }
-        });
+    if (instances.size() > 0) {
+      // Create separate task for each study instance
+      final ExecutorService pool = Executors.newFixedThreadPool(commonConfig.getMaxThreads());
+      final List<Callable<HttpRequestMetrics>> tasks = new ArrayList<>();
+      for (Instance instance : instances) {
+        final String seriesId = instance.getSeriesUID();
+        final String instanceId = instance.getInstanceUID();
+        if (!(seriesId == null || instanceId == null)) {
+          tasks.add(new Callable<HttpRequestMetrics>() {
+            @Override public HttpRequestMetrics call() throws Exception {
+              // Execute request
+              final HttpRequestProfiler request =
+                  HttpRequestProfilerFactory.createRetrieveDicomStudyInstanceRequest(dicomStudyConfig,
+                      seriesId, instanceId);
+              final HttpRequestMetrics metrics = request.execute(NullOutputStream.NULL_OUTPUT_STREAM);
+              
+              // Update first response and first instance metrics
+              firstResponseMetrics.updateAndGet(m -> {
+                return m == null || metrics.getResponseTime() < m.getResponseTime() ? metrics : m;
+              });
+              firstInstanceMetrics.updateAndGet(m -> {
+                return m == null || metrics.getEndTime() < m.getEndTime() ? metrics : m;
+              });
+              
+              // Print progress
+              printProgress();
+              return metrics;
+            }
+          });
+        }
       }
-    }
-    
-    // Wait for completion and update metrics
-    final List<Future<HttpRequestMetrics>> futures = pool.invokeAll(tasks);
-    final HttpRequestAggregates iterationMetrics = new HttpRequestAggregates(tasks.size(),
-        System.currentTimeMillis() - iterationStartTime);
-    
-    if (output == System.out) {
-      // New line after progress
-      output.println();
-    }
-    for (Future<HttpRequestMetrics> future : futures) {
-      try {
-        final HttpRequestMetrics metrics = future.get();
-        output.println(metrics.toCSVString(iteration));
-        iterationMetrics.addMetrics(metrics);
-      } catch (Exception e) {
-        printRequestFailed(e);
+      
+      // Wait for completion
+      final List<Future<HttpRequestMetrics>> futures = pool.invokeAll(tasks);
+      final long totalLatency = System.currentTimeMillis() - iterationStartTime;
+      
+      if (output == System.out) {
+        // New line after progress
+        output.println();
       }
+      
+      // Print requests metrics and count bytes read
+      long totalBytesRead = queryInstancesMetrics.getBytesRead();
+      for (Future<HttpRequestMetrics> future : futures) {
+        try {
+          final HttpRequestMetrics metrics = future.get();
+          output.println(metrics.toCSVString(iteration));
+          totalBytesRead += metrics.getBytesRead();
+        } catch (Exception e) {
+          printRequestFailed(e);
+        }
+      }
+      
+      // Update aggregates
+      queryInstancesAggregates.addLatency(queryInstancesMetrics.getTotalLatency());
+      firstResponseAggregates.addLatency(firstResponseMetrics.get().getResponseLatency());
+      firstInstanceAggregates.addLatency(firstInstanceMetrics.get().getTotalLatency());
+      totalAggregates.addLatency(totalLatency);
+      
+      // Print metrics
+      printRetrieveStudyMetrics(queryInstancesMetrics.getTotalLatency(),
+          firstResponseMetrics.get().getResponseLatency(),
+          firstInstanceMetrics.get().getTotalLatency(), totalLatency, totalBytesRead);
     }
-    
-    // Print metrics
-    totalAggregates.addAggregates(iterationMetrics);
-    iterationMetrics.addMetrics(queryInstancesMetrics);
-    printRetrieveStudyMetrics(queryInstancesMetrics, firstResponseMetrics.get(),
-        firstInstanceMetrics.get(), iterationMetrics);
   }
   
   /**
-   * Prints calculated percentiles for all iterations to stdout.
+   * Prints calculated aggregates for all iterations to stdout.
    */
   @Override
   protected void printAggregates() {
-    printPercentiles(commonConfig.getIterations(), totalAggregates);
+    printRetrieveStudyAggregates(queryInstancesAggregates, firstResponseAggregates,
+        firstInstanceAggregates, totalAggregates);
   }
   
   /* Object mapper to convert JSON response */
