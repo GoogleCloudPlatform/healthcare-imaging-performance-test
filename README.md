@@ -4,19 +4,27 @@
 This repository contains a tool suite to benchmark DICOM data transmission
 routines backed by Google Cloud Healthcare API.
 
-## Public datasets
+## Testing data
+
+The tool requires Google Cloud healthcare DICOM stores populated with testing
+data. Follow this [doc](https://cloud.google.com/healthcare/docs/how-tos/dicom)
+for how to create DICOM stores and import DICOM data.
 
 You may use publicly available DICOM data already hosted by HCLS in GCP such as
-[NIH-Chest-Xray](https://cloud.google.com/healthcare/docs/resources/public-datasets/nih-chest#cloud-healthcare-api)
-and [TCIA](https://cloud.google.com/healthcare/docs/resources/public-datasets/tcia#cloud-healthcare-api)
+[NIH-Chest-Xray](https://cloud.google.com/healthcare/docs/resources/public-datasets/nih-chest)
+and [TCIA](https://cloud.google.com/healthcare/docs/resources/public-datasets/tcia)
 image sets.
 
-## Environment settings
+## Authentication set up
 
-In order to access Google Cloud Healthcare API endpoints you need to create
-[service account](https://cloud.google.com/docs/authentication/production#obtaining_and_providing_service_account_credentials_manually)
-and setup [GOOGLE_APPLICATION_CREDENTIALS](https://cloud.google.com/docs/authentication/production#providing_service_account_credentials)
-environment variable.
+The tool uses Google Cloud ADC (Application Default Credentials) to authenticate
+to Google Cloud Healthcare APIs.
+
+To use Goolge user credentials, run:
+
+  gcloud auth application-default login
+
+To use a service account, follow this [doc](https://cloud.google.com/docs/authentication/production#providing_service_account_credentials).
 
 ## Command line options
 
