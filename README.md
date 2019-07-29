@@ -49,20 +49,22 @@ To run the tool:
 3. Go to `target` folder and run `java -jar healthcare-imaging-performance-test-X.Y.Z-jar-with-dependencies.jar benchmark <BENCHMARK> <OPTIONS...>`,
    where `X.Y.Z` is the version of the tool, `BENCHMARK` is the name of the benchmark and `OPTIONS` is a list of the following options:
    
-      `-i`, `--iterations`
-      Optional number of iterations how many times the routine is executed (default is 1).
-      `-t`, `--max-threads`
-      Optional maximum number of threads to run in parallel in download requests (default is 10).
-      `-o`, `--output`
-      Optional file to write the result to. If not provided, the result will be written to standard output.
-    * `-p`, `--project`
-      Required ID of the GCP project.
-    * `-l`, `--location`
-      Required ID of location (region).
-    * `-d`, `--dataset`
-      Required ID of dataset in the project.
-    * `-s`, `--dicom-store`
-      Required ID of DICOM store.
+```
+  `-i`, `--iterations`
+  Optional number of iterations how many times the routine is executed (default is 1).
+  `-t`, `--max-threads`
+  Optional maximum number of threads to run in parallel in download requests (default is 10).
+  `-o`, `--output`
+  Optional file to write the result to. If not provided, the result will be written to standard output.
+* `-p`, `--project`
+  Required ID of the GCP project.
+* `-l`, `--location`
+  Required ID of location (region).
+* `-d`, `--dataset`
+  Required ID of dataset in the project.
+* `-s`, `--dicom-store`
+  Required ID of DICOM store.
+```
 
 > Note: * are required options. 
 
