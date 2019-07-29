@@ -50,19 +50,19 @@ To run the tool:
    where `X.Y.Z` is the version of the tool, `BENCHMARK` is the name of the benchmark and `OPTIONS` is a list of the following options:
    
 ```
-  `-i`, `--iterations`
+  -i, --iterations
   Optional number of iterations how many times the routine is executed (default is 1).
-  `-t`, `--max-threads`
+  -t, --max-threads
   Optional maximum number of threads to run in parallel in download requests (default is 10).
-  `-o`, `--output`
+  -o, --output
   Optional file to write the result to. If not provided, the result will be written to standard output.
-* `-p`, `--project`
+* -p, --project
   Required ID of the GCP project.
-* `-l`, `--location`
+* -l, --location
   Required ID of location (region).
-* `-d`, `--dataset`
+* -d, --dataset
   Required ID of dataset in the project.
-* `-s`, `--dicom-store`
+* -s, --dicom-store
   Required ID of DICOM store.
 ```
 
