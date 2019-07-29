@@ -15,33 +15,58 @@ You may use publicly available DICOM data already hosted by HCLS in GCP such as
 and [TCIA](https://cloud.google.com/healthcare/docs/resources/public-datasets/tcia)
 image sets.
 
-## Authentication set up
+## Prerequisites
+
+### Applications
+
+Before running the tool, ensure that you've installed the following applications:
+
+- [Java SE Runtime Environment 8](https://www.oracle.com/technetwork/java/javase/downloads/index.html) or later
+- [Git](https://git-scm.com/)
+- [Apache Maven](https://maven.apache.org/)
+- [Google Cloud SDK](https://cloud.google.com/sdk/)
+
+### Authentication set up
 
 The tool uses Google Cloud ADC (Application Default Credentials) to authenticate
 to Google Cloud Healthcare APIs.
 
 To use Goolge user credentials, run:
 
-  gcloud auth application-default login
+    gcloud auth application-default login
 
 To use a service account, follow this [doc](https://cloud.google.com/docs/authentication/production#providing_service_account_credentials).
 
-## Command line options
+## Running performance testing tool
 
-The command line syntax is `benchmark <BENCHMARK> <OPTIONS...>`; where `BENCHMARK`
-is the name of the benchmark and `OPTIONS` is a list of the following options:
-- `-i`, `--iterations` - Optional number of iterations how many times the routine is executed
-  (default is 1).
-- `-t`, `--max-threads` - Optional maximum number of threads to run in parallel in download requests
-  (default is 10).
-- `-o`, `--output` - Optional file to write the result to. If not provided, the result will be
-  written to standard output.
-- `-p`, `--project` - Required ID of the GCP project.
-- `-l`, `--location` - Required ID of location (region).
-- `-d`, `--dataset` - Required ID of dataset in the project.
-- `-s`, `--dicom-store` - Required ID of DICOM store.
+To run the tool:
 
-## Download dataset benchmark
+1. Open a terminal in some folder and run `git clone https://github.com/GoogleCloudPlatform/healthcare-imaging-performance-test.git`
+   to clone source code of the tool from GitHub or download
+   [ZIP archive](https://github.com/GoogleCloudPlatform/healthcare-imaging-performance-test/archive/master.zip)
+   and extract it contents.
+2. Go to `healthcare-imaging-performance-test` folder and run `mvn clean install` to create JAR bundle.
+3. Go to `target` folder and run `java -jar healthcare-imaging-performance-test-X.Y.Z-jar-with-dependencies.jar benchmark <BENCHMARK> <OPTIONS...>`,
+   where `X.Y.Z` is the version of the tool, `BENCHMARK` is the name of the benchmark and `OPTIONS` is a list of the following options:
+   
+      `-i`, `--iterations`
+      Optional number of iterations how many times the routine is executed (default is 1).
+      `-t`, `--max-threads`
+      Optional maximum number of threads to run in parallel in download requests (default is 10).
+      `-o`, `--output`
+      Optional file to write the result to. If not provided, the result will be written to standard output.
+    * `-p`, `--project`
+      Required ID of the GCP project.
+    * `-l`, `--location`
+      Required ID of location (region).
+    * `-d`, `--dataset`
+      Required ID of dataset in the project.
+    * `-s`, `--dicom-store`
+      Required ID of DICOM store.
+
+> Note: * are required options. 
+
+### Download dataset benchmark
 
 This benchmark shows the user how fast it is to download a large dataset (a whole DICOM store).
 It involves sending requests to get study information (QIDO) and sending paralleled requests to
@@ -51,7 +76,7 @@ The name of this benchmark is `download-dataset`.
 
 Example of command line:
 
-    benchmark download-dataset -i 3 -t 5 -o results.csv -p chc-nih-chest-xray -l us-central1 -d nih-chest-xray -s nih-chest-xray
+    java -jar healthcare-imaging-performance-test-X.Y.Z-jar-with-dependencies.jar benchmark download-dataset -i 3 -t 5 -o results.csv -p chc-nih-chest-xray -l us-central1 -d nih-chest-xray -s nih-chest-xray
 
 In the example above the `download-dataset` benchmark will be executed 3 times, will use maximum 5 threads
 to read studies in parallel from [NIH-Chest-Xray](https://cloud.google.com/healthcare/docs/resources/public-datasets/nih-chest#cloud-healthcare-api)
@@ -70,7 +95,7 @@ Where:
 - `BYTES_READ` is number of bytes read for the study.
 - `TRANSFER_RATE` is bytes read per second for the study.
 
-## Retrieve study benchmark
+### Retrieve study benchmark
 
 This benchmark shows how fast it can be to retrieve a whole study with Google Cloud Healthcare
 Imaging API. It involves sending request to get instance information (QIDO) and sending
@@ -81,7 +106,7 @@ The name of this benchmark is `retrieve-study`. The command line has additional 
 
 Example of command line:
 
-    benchmark retrieve-study -i 3 -t 5 -o results.csv -p chc-nih-chest-xray -l us-central1 -d nih-chest-xray -s nih-chest-xray -y 1.2.276.0.7230010.3.1.2.2148188175.13.1558046897.715757
+    java -jar healthcare-imaging-performance-test-X.Y.Z-jar-with-dependencies.jar benchmark retrieve-study -i 3 -t 5 -o results.csv -p chc-nih-chest-xray -l us-central1 -d nih-chest-xray -s nih-chest-xray -y 1.2.276.0.7230010.3.1.2.2148188175.13.1558046897.715757
 
 In the example above the `retrieve-study` benchmark will be executed 3 times, will use maximum 5 threads
 to read instances of study with ID = `1.2.276.0.7230010.3.1.2.2148188175.13.1558046897.715757`
