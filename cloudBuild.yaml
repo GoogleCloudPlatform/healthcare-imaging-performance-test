@@ -3,5 +3,20 @@ steps:
   args:
   - "mvn"
   - "install"
+- name: 'google/cloud-sdk:251.0.0'
+  args:
+  - 'bash'
+  - './integrationTest/integrationTest.sh'
+  - '${_PROJECT}'
+  - '${_LOCATION}'
+  - '${_DATASET}'
+  - '${_STORE}'
+  - '${_STUDY}'
+  timeout: 600s
 
-
+substitutions:
+  _PROJECT: gcp-healthcare-oss-test
+  _LOCATION: us-central1
+  _DATASET: healthcare-imaging-performance-test
+  _STORE: store
+  _STUDY: study_000000003
