@@ -18,33 +18,30 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * Describes DICOM attribute.
- * 
+ *
  * @author Mikhail Ukhlin
  */
 public class Attribute<T> {
-  
-  /**
-   * DICOM attribute values.
-   */
+
+  /** DICOM attribute values. */
   @JsonProperty("Value")
   private T[] value;
-  
+
   /**
    * Returns values of DICOM attribute as an array.
-   * 
+   *
    * @return Values of DICOM attribute as an array.
    */
   public T[] getValue() {
     return value;
   }
-  
+
   /**
    * Returns first value of DICOM attribute or {@code null} if not available.
-   * 
+   *
    * @return First value of DICOM attribute.
    */
   public T getFirstValue() {
     return value == null || value.length == 0 ? null : value[0];
   }
-  
 }

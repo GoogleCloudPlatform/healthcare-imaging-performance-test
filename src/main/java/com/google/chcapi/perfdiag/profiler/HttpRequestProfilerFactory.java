@@ -14,55 +14,54 @@
 
 package com.google.chcapi.perfdiag.profiler;
 
-import java.util.Arrays;
-
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-
-import java.nio.charset.StandardCharsets;
-
-import java.net.URLEncoder;
-
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpUriRequest;
-
 import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
 import com.google.chcapi.perfdiag.benchmark.BenchmarkException;
 import com.google.chcapi.perfdiag.benchmark.config.DicomStoreConfig;
 import com.google.chcapi.perfdiag.benchmark.config.DicomStudyConfig;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpUriRequest;
 
 /**
  * Factory class that allows to create HTTP profiling requests to Google Cloud Healthcare API.
- * 
+ *
  * @author Mikhail Ukhlin
  * @see HttpRequestProfiler
  */
 public final class HttpRequestProfilerFactory {
-  
+
   /* Do not allow instances */
   private HttpRequestProfilerFactory() {
     throw new IllegalAccessError();
   }
-  
+
   /* Root URL of Google Cloud Healthcare API */
   private static final String API_ROOT_URL = "https://healthcare.googleapis.com/v1beta1";
-  
+
   /* OAuth 2.0 credential obtained using Google Application Default Credentials mechanism */
   private static final GoogleCredential CREDENTIAL;
+
   static {
     try {
-      CREDENTIAL = GoogleCredential.getApplicationDefault().createScoped(Arrays.asList(
-          "https://www.googleapis.com/auth/cloud-healthcare",
-          "https://www.googleapis.com/auth/cloudplatformprojects.readonly"));
+      CREDENTIAL =
+          GoogleCredential.getApplicationDefault()
+              .createScoped(
+                  Arrays.asList(
+                      "https://www.googleapis.com/auth/cloud-healthcare",
+                      "https://www.googleapis.com/auth/cloudplatformprojects.readonly"));
     } catch (IOException e) {
       throw new IllegalStateException(e.getMessage());
     }
   }
-  
+
   /**
-   * Requests a new access token from the authorization endpoint if previous one is expired or
-   * was not requested yet.
-   * 
+   * Requests a new access token from the authorization endpoint if previous one is expired or was
+   * not requested yet.
+   *
    * @throws IOException if an IO error occurred.
    * @throws BenchmarkException if a new access token was not retrieved.
    */
@@ -74,73 +73,80 @@ public final class HttpRequestProfilerFactory {
       }
     }
   }
-  
+
   /**
-   * Constructs the {@code projects.locations.datasets.dicomStores.searchForStudies}
-   * profiling request for the specified DICOM store configuration.
-   * 
+   * Constructs the {@code projects.locations.datasets.dicomStores.searchForStudies} profiling
+   * request for the specified DICOM store configuration.
+   *
    * @param config DICOM store configuration.
    * @return The {@link HttpRequestProfiler} instance.
    */
   public static HttpRequestProfiler createListDicomStudiesRequest(DicomStoreConfig config) {
-    return new HttpRequestProfiler(createHttpGetRequest(
-        buildDicomWebURI(config)
-        .toString(), false));
+    return new HttpRequestProfiler(
+        createHttpGetRequest(buildDicomWebURI(config).toString(), false));
   }
-  
+
   /**
-   * Constructs the {@code projects.locations.datasets.dicomStores.studies.retrieveStudy}
-   * profiling request for the specified DICOM store configuration and study ID.
-   * 
+   * Constructs the {@code projects.locations.datasets.dicomStores.studies.retrieveStudy} profiling
+   * request for the specified DICOM store configuration and study ID.
+   *
    * @param config DICOM store configuration.
    * @param studyId ID of the study to retrieve.
    * @return The {@link HttpRequestProfiler} instance.
    */
-  public static HttpRequestProfiler createRetrieveDicomStudyRequest(DicomStoreConfig config,
-      String studyId) {
-    return new HttpRequestProfiler(createHttpGetRequest(
-        buildDicomWebURI(config)
-        .append("/").append(encodeURIToken(studyId))
-        .toString(), true));
+  public static HttpRequestProfiler createRetrieveDicomStudyRequest(
+      DicomStoreConfig config, String studyId) {
+    return new HttpRequestProfiler(
+        createHttpGetRequest(
+            buildDicomWebURI(config).append("/").append(encodeURIToken(studyId)).toString(), true));
   }
-  
+
   /**
    * Constructs the {@code projects.locations.datasets.dicomStores.studies.searchForInstances}
    * profiling request for the specified DICOM study configuration.
-   * 
+   *
    * @param config DICOM study configuration.
    * @return The {@link HttpRequestProfiler} instance.
    */
   public static HttpRequestProfiler createListDicomStudyInstancesRequest(DicomStudyConfig config) {
-    return new HttpRequestProfiler(createHttpGetRequest(
-        buildDicomWebURI(config)
-        .append("/").append(encodeURIToken(config.getDicomStudyId()))
-        .append("/instances")
-        .toString(), false));
+    return new HttpRequestProfiler(
+        createHttpGetRequest(
+            buildDicomWebURI(config)
+                .append("/")
+                .append(encodeURIToken(config.getDicomStudyId()))
+                .append("/instances")
+                .toString(),
+            false));
   }
-  
+
   /**
-   * Constructs the {@code projects.locations.datasets.dicomStores.studies.series.instances.retrieveInstance}
-   * profiling request for the specified DICOM study configuration, series and instance IDs.
-   * 
+   * Constructs the {@code
+   * projects.locations.datasets.dicomStores.studies.series.instances.retrieveInstance} profiling
+   * request for the specified DICOM study configuration, series and instance IDs.
+   *
    * @param config DICOM study configuration.
    * @param seriesId ID of the series.
    * @param instanceId ID of the instance to retrieve.
    * @return The {@link HttpRequestProfiler} instance.
    */
-  public static HttpRequestProfiler createRetrieveDicomStudyInstanceRequest(DicomStudyConfig config,
-      String seriesId, String instanceId) {
-    return new HttpRequestProfiler(createHttpGetRequest(
-        buildDicomWebURI(config)
-        .append("/").append(encodeURIToken(config.getDicomStudyId()))
-        .append("/series/").append(encodeURIToken(seriesId))
-        .append("/instances/").append(encodeURIToken(instanceId))
-        .toString(), true));
+  public static HttpRequestProfiler createRetrieveDicomStudyInstanceRequest(
+      DicomStudyConfig config, String seriesId, String instanceId) {
+    return new HttpRequestProfiler(
+        createHttpGetRequest(
+            buildDicomWebURI(config)
+                .append("/")
+                .append(encodeURIToken(config.getDicomStudyId()))
+                .append("/series/")
+                .append(encodeURIToken(seriesId))
+                .append("/instances/")
+                .append(encodeURIToken(instanceId))
+                .toString(),
+            true));
   }
-  
+
   /**
    * Constructs a new HTTP GET request for the specified URI.
-   * 
+   *
    * @param uri The HTTP request URI.
    * @param download {@code true} if it is download request.
    * @return A new prepared HTTP GET request instance.
@@ -153,25 +159,29 @@ public final class HttpRequestProfilerFactory {
     request.setHeader("Authorization", "Bearer " + CREDENTIAL.getAccessToken());
     return request;
   }
-  
+
   /**
    * Constructs DICOM Web request URI using parameters from the specified DICOM store configuration.
-   * 
+   *
    * @param config DICOM store configuration.
    * @return DICOM Web request URI as {@code StringBuilder} instance for further URI construction.
    */
   private static StringBuilder buildDicomWebURI(DicomStoreConfig config) {
     return new StringBuilder(API_ROOT_URL)
-        .append("/projects/").append(encodeURIToken(config.getProjectId()))
-        .append("/locations/").append(encodeURIToken(config.getLocationId()))
-        .append("/datasets/").append(encodeURIToken(config.getDatasetId()))
-        .append("/dicomStores/").append(encodeURIToken(config.getDicomStoreId()))
+        .append("/projects/")
+        .append(encodeURIToken(config.getProjectId()))
+        .append("/locations/")
+        .append(encodeURIToken(config.getLocationId()))
+        .append("/datasets/")
+        .append(encodeURIToken(config.getDatasetId()))
+        .append("/dicomStores/")
+        .append(encodeURIToken(config.getDicomStoreId()))
         .append("/dicomWeb/studies");
   }
-  
+
   /**
    * Encodes the specified token to be used in URI address.
-   * 
+   *
    * @param token The token to encode.
    * @return Encoded token to be used in URI address.
    */
@@ -183,5 +193,4 @@ public final class HttpRequestProfilerFactory {
       throw new IllegalStateException(e);
     }
   }
-  
 }

@@ -18,24 +18,21 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * Describes DICOM study.
- * 
+ *
  * @author Mikhail Ukhlin
  */
 public class Study {
-  
-  /**
-   * DICOM study UID attribute.
-   */
+
+  /** DICOM study UID attribute. */
   @JsonProperty("0020000D")
   private Attribute<String> studyUID;
-  
+
   /**
    * Returns UID of DICOM study or {@code null} if not available.
-   * 
+   *
    * @return UID of DICOM study.
    */
   public String getStudyUID() {
     return studyUID == null ? null : studyUID.getFirstValue();
   }
-  
 }
