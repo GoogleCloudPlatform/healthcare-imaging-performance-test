@@ -91,11 +91,12 @@ has the following format:
 
 Where:
 - `ITERATION` is number of iteration.
-- `RESPONSE_LATENCY` is latency of first byte received in milliseconds.
-- `READ_LATENCY` is latency of reading study in milliseconds.
-- `TOTAL_LATENCY` is total latency of reading whole study in milliseconds.
-- `BYTES_READ` is number of bytes read for the study.
-- `TRANSFER_RATE` is bytes read per second for the study.
+- `QUERYING_STUDIES_LATENCY` is latency of querying studies in milliseconds.
+- `FIRST_BYTE_RECEIVED_LATENCY` is latency of first byte received in milliseconds.
+- `READING_FIRST_STUDY_LATENCY` is latency of reading first study in milliseconds.
+- `READING_WHOLE_DATASET_LATENCY` is total latency of reading whole dataset in milliseconds.
+- `TOTAL_BYTES_READ` is total number of bytes read for the whole dataset.
+- `BYTES_READ_PER_SECOND` is bytes read per second for the whole dataset.
 
 ### Retrieve study benchmark
 
@@ -122,8 +123,9 @@ has the following format:
 
 Where:
 - `ITERATION` is number of iteration.
-- `RESPONSE_LATENCY` is latency of first byte received in milliseconds.
-- `READ_LATENCY` is latency of reading instance in milliseconds.
-- `TOTAL_LATENCY` is total latency of reading whole instance in milliseconds.
-- `BYTES_READ` is number of bytes read for the instance.
-- `TRANSFER_RATE` is bytes read per second for the instance.
+- `QUERYING_INSTANCES_LATENCY` is latency of querying instances in milliseconds.
+- `FIRST_BYTE_RECEIVED_LATENCY` is latency of first byte received in milliseconds.
+- `READING_FIRST_INSTANCE_LATENCY` is latency of reading first instance in milliseconds.
+- `READING_WHOLE_STUDY_LATENCY` is total latency of reading whole study in milliseconds.
+- `TOTAL_BYTES_READ` is total number of bytes read for the whole study.
+- `BYTES_READ_PER_SECOND` is bytes read per second for the whole study.

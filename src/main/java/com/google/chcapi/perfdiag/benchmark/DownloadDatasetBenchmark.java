@@ -92,10 +92,10 @@ public class DownloadDatasetBenchmark extends Benchmark {
   
   /**
    * Retrieves DICOM studies in parallel and stores metrics for each request to the specified
-   * output stream.
+   * output stream if any.
    * 
    * @param iteration Iteration number.
-   * @param output Output stream to write metrics.
+   * @param output Output stream to write metrics or {@code null} if output file is not specified.
    * @throws Exception if an error occurred.
    */
   @Override
@@ -147,17 +147,11 @@ public class DownloadDatasetBenchmark extends Benchmark {
       final List<Future<HttpRequestMetrics>> futures = pool.invokeAll(tasks);
       final long totalLatency = System.currentTimeMillis() - iterationStartTime;
       
-      if (output == System.out) {
-        // New line after progress
-        output.println();
-      }
-      
       // Print requests metrics and count bytes read
       long totalBytesRead = queryStudiesMetrics.getBytesRead();
       for (Future<HttpRequestMetrics> future : futures) {
         try {
           final HttpRequestMetrics metrics = future.get();
-          output.println(metrics.toCSVString(iteration));
           totalBytesRead += metrics.getBytesRead();
         } catch (Exception e) {
           printRequestFailed(e);
@@ -170,10 +164,33 @@ public class DownloadDatasetBenchmark extends Benchmark {
       firstStudyAggregates.addLatency(firstStudyMetrics.get().getTotalLatency());
       totalAggregates.addLatency(totalLatency);
       
-      // Print iteration metrics
+      // Print iteration metrics to stdout
       printDownloadDatasetMetrics(queryStudiesMetrics.getTotalLatency(),
           firstResponseMetrics.get().getResponseLatency(), firstStudyMetrics.get().getTotalLatency(),
           totalLatency, totalBytesRead);
+      
+      // Print iteration metrics to CSV file if output option is specified
+      if (output != null) {
+        if (iteration == 0) {
+          output.println("ITERATION, QUERYING_STUDIES_LATENCY, FIRST_BYTE_RECEIVED_LATENCY, "
+              + "READING_FIRST_STUDY_LATENCY, READING_WHOLE_DATASET_LATENCY, "
+              + "TOTAL_BYTES_READ, BYTES_READ_PER_SECOND");
+        }
+        output.print(iteration);
+        output.print(", ");
+        output.print(queryStudiesMetrics.getTotalLatency());
+        output.print(", ");
+        output.print(firstResponseMetrics.get().getResponseLatency());
+        output.print(", ");
+        output.print(firstStudyMetrics.get().getTotalLatency());
+        output.print(", ");
+        output.print(totalLatency);
+        output.print(", ");
+        output.print(totalBytesRead);
+        output.print(", ");
+        output.print((double) totalBytesRead / (double) totalLatency * 1000.0);
+        output.println();
+      }
     }
   }
   

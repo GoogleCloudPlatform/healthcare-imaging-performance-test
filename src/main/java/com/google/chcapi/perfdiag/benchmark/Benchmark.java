@@ -45,11 +45,6 @@ public abstract class Benchmark extends BenchmarkMessages implements Runnable {
   protected CommonConfig commonConfig;
   
   /**
-   * Latency of iteration in milliseconds.
-   */
-  protected long iterationLatency;
-  
-  /**
    * Benchmark entry point.
    */
   @Override
@@ -89,7 +84,7 @@ public abstract class Benchmark extends BenchmarkMessages implements Runnable {
   
   /**
    * Executes benchmark. This method just invokes {@link #runIterations(PrintStream)} and provides
-   * output stream depending on {@code --output} command line option.
+   * output stream if {@code --output} command line option is specified.
    * 
    * @throws BenchmarkException if an error occurred.
    * @see #runIterations(PrintStream)
@@ -99,7 +94,7 @@ public abstract class Benchmark extends BenchmarkMessages implements Runnable {
     final File outputFile = commonConfig.getOutputFile();
     if (outputFile == null) {
       // Run benchmark and write metrics to stdout
-      runIterations(System.out);
+      runIterations(null);
     } else {
       // Run benchmark and write metrics to the specified output file
       try (PrintStream output = new PrintStream(outputFile)) {
@@ -114,7 +109,7 @@ public abstract class Benchmark extends BenchmarkMessages implements Runnable {
    * Runs benchmark iterations one by one invoking the {@link #runIteration(int, PrintStream)}
    * method. The number of iterations is specified by the {@code --iterations} command line option.
    * 
-   * @param output Output stream to write metrics.
+   * @param output Output stream to write metrics or {@code null} if output file is not specified.
    * @throws BenchmarkException if an error occurred.
    * @see #runIteration(int, PrintStream)
    * @see CommonConfig#getIterations()
