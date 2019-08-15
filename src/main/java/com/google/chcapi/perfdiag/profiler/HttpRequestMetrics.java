@@ -120,25 +120,5 @@ public class HttpRequestMetrics {
   public double getTransferRate() {
     return (double) getBytesRead() / (double) getTotalLatency() * 1000.0;
   }
-
-  /**
-   * Return CSV string for this request metrics in the following format: {@code ITERATION,
-   * RESPONSE_LATENCY, READ_LATENCY, TOTAL_LATENCY, BYTES_READ, TRANSFER_RATE}.
-   *
-   * @param iteration The benchmark iteration number.
-   * @return CSV string for this request metrics.
-   */
-  public String toCSVString(int iteration) {
-    return iteration
-        + ", "
-        + getResponseLatency()
-        + ", "
-        + getReadLatency()
-        + ", "
-        + getTotalLatency()
-        + ", "
-        + getBytesRead()
-        + ", "
-        + getTransferRate();
-  }
+  
 }

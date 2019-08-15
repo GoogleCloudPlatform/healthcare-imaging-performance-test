@@ -92,10 +92,10 @@ public class RetrieveStudyBenchmark extends Benchmark {
   
   /**
    * Retrieves DICOM study instances in parallel and stores metrics for each request to the
-   * specified output stream.
+   * specified output stream if any.
    * 
    * @param iteration Iteration number.
-   * @param output Output stream to write metrics.
+   * @param output Output stream to write metrics or {@code null} if output file is not specified.
    * @throws Exception if an error occurred.
    */
   @Override
@@ -159,7 +159,6 @@ public class RetrieveStudyBenchmark extends Benchmark {
       for (Future<HttpRequestMetrics> future : futures) {
         try {
           final HttpRequestMetrics metrics = future.get();
-          output.println(metrics.toCSVString(iteration));
           totalBytesRead += metrics.getBytesRead();
         } catch (Exception e) {
           printRequestFailed(e);
@@ -176,6 +175,29 @@ public class RetrieveStudyBenchmark extends Benchmark {
       printRetrieveStudyMetrics(queryInstancesMetrics.getTotalLatency(),
           firstResponseMetrics.get().getResponseLatency(),
           firstInstanceMetrics.get().getTotalLatency(), totalLatency, totalBytesRead);
+      
+      // Print iteration metrics to CSV file if output option is specified
+      if (output != null) {
+        if (iteration == 0) {
+          output.println("ITERATION, QUERYING_INSTANCES_LATENCY, FIRST_BYTE_RECEIVED_LATENCY, "
+              + "READING_FIRST_INSTANCE_LATENCY, READING_WHOLE_STUDY_LATENCY, "
+              + "TOTAL_BYTES_READ, BYTES_READ_PER_SECOND");
+        }
+        output.print(iteration);
+        output.print(", ");
+        output.print(queryInstancesMetrics.getTotalLatency());
+        output.print(", ");
+        output.print(firstResponseMetrics.get().getResponseLatency());
+        output.print(", ");
+        output.print(firstInstanceMetrics.get().getTotalLatency());
+        output.print(", ");
+        output.print(totalLatency);
+        output.print(", ");
+        output.print(totalBytesRead);
+        output.print(", ");
+        output.print((double) totalBytesRead / (double) totalLatency * 1000.0);
+        output.println();
+      }
     }
   }
   
