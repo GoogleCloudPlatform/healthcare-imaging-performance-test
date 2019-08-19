@@ -36,7 +36,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 
 import com.google.chcapi.perfdiag.model.Study;
 import com.google.chcapi.perfdiag.benchmark.config.DicomStoreConfig;
-import com.google.chcapi.perfdiag.benchmark.stats.LatencyAggregates;
+import com.google.chcapi.perfdiag.benchmark.stats.MetricAggregates;
 import com.google.chcapi.perfdiag.profiler.HttpRequestProfiler;
 import com.google.chcapi.perfdiag.profiler.HttpRequestProfilerFactory;
 import com.google.chcapi.perfdiag.profiler.HttpRequestMetrics;
@@ -60,22 +60,27 @@ public class DownloadDatasetBenchmark extends Benchmark {
   /**
    * Aggregates for latency of querying studies.
    */
-  private LatencyAggregates queryStudiesAggregates;
+  private MetricAggregates queryStudiesAggregates;
   
   /**
    * Aggregates for latency of first byte received.
    */
-  private LatencyAggregates firstResponseAggregates;
+  private MetricAggregates firstResponseAggregates;
   
   /**
    * Aggregates for latency of reading first study.
    */
-  private LatencyAggregates firstStudyAggregates;
+  private MetricAggregates firstStudyAggregates;
   
   /**
    * Aggregates for latency of downloading the whole dataset.
    */
-  private LatencyAggregates totalAggregates;
+  private MetricAggregates totalAggregates;
+  
+  /**
+   * Aggregates for transfer rate of downloading the whole dataset.
+   */
+  private MetricAggregates transferRateAggregates;
   
   /**
    * Validates configuration and initializes aggregates.
@@ -84,10 +89,11 @@ public class DownloadDatasetBenchmark extends Benchmark {
   protected void validateConfig() {
     super.validateConfig();
     final int iterations = commonConfig.getIterations();
-    queryStudiesAggregates = new LatencyAggregates(iterations);
-    firstResponseAggregates = new LatencyAggregates(iterations);
-    firstStudyAggregates = new LatencyAggregates(iterations);
-    totalAggregates = new LatencyAggregates(iterations);
+    queryStudiesAggregates = new MetricAggregates(iterations);
+    firstResponseAggregates = new MetricAggregates(iterations);
+    firstStudyAggregates = new MetricAggregates(iterations);
+    totalAggregates = new MetricAggregates(iterations);
+    transferRateAggregates = new MetricAggregates(iterations);
   }
   
   /**
@@ -159,22 +165,24 @@ public class DownloadDatasetBenchmark extends Benchmark {
       }
       
       // Update aggregates
-      queryStudiesAggregates.addLatency(queryStudiesMetrics.getTotalLatency());
-      firstResponseAggregates.addLatency(firstResponseMetrics.get().getResponseLatency());
-      firstStudyAggregates.addLatency(firstStudyMetrics.get().getTotalLatency());
-      totalAggregates.addLatency(totalLatency);
+      final double transferRate = (double) totalBytesRead / (double) totalLatency / 1048.576;
+      queryStudiesAggregates.addValue(queryStudiesMetrics.getTotalLatency());
+      firstResponseAggregates.addValue(firstResponseMetrics.get().getResponseLatency());
+      firstStudyAggregates.addValue(firstStudyMetrics.get().getTotalLatency());
+      totalAggregates.addValue(totalLatency);
+      transferRateAggregates.addValue(transferRate);
       
       // Print iteration metrics to stdout
       printDownloadDatasetMetrics(queryStudiesMetrics.getTotalLatency(),
           firstResponseMetrics.get().getResponseLatency(), firstStudyMetrics.get().getTotalLatency(),
-          totalLatency, totalBytesRead);
+          totalLatency, totalBytesRead, transferRate);
       
       // Print iteration metrics to CSV file if output option is specified
       if (output != null) {
         if (iteration == 0) {
           output.println("ITERATION, QUERYING_STUDIES_LATENCY, FIRST_BYTE_RECEIVED_LATENCY, "
               + "READING_FIRST_STUDY_LATENCY, READING_WHOLE_DATASET_LATENCY, "
-              + "TOTAL_BYTES_READ, BYTES_READ_PER_SECOND");
+              + "TOTAL_BYTES_READ, MB_READ_PER_SECOND");
         }
         output.print(iteration);
         output.print(", ");
@@ -188,7 +196,7 @@ public class DownloadDatasetBenchmark extends Benchmark {
         output.print(", ");
         output.print(totalBytesRead);
         output.print(", ");
-        output.print((double) totalBytesRead / (double) totalLatency * 1000.0);
+        output.print(transferRate);
         output.println();
       }
     }
@@ -200,7 +208,7 @@ public class DownloadDatasetBenchmark extends Benchmark {
   @Override
   protected void printAggregates() {
     printDownloadDatasetAggregates(queryStudiesAggregates, firstResponseAggregates,
-        firstStudyAggregates, totalAggregates);
+        firstStudyAggregates, totalAggregates, transferRateAggregates);
   }
   
   /* Object mapper to convert JSON response */

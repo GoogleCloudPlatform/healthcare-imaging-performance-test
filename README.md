@@ -87,7 +87,7 @@ public dataset and store gathered metrics to `results.csv` file.
 The format of the output file is CSV. Each line represents metrics of separate WADO request and
 has the following format:
 
-    ITERATION, RESPONSE_LATENCY, READ_LATENCY, TOTAL_LATENCY, BYTES_READ, TRANSFER_RATE
+    ITERATION, QUERYING_STUDIES_LATENCY, FIRST_BYTE_RECEIVED_LATENCY, READING_FIRST_STUDY_LATENCY, READING_WHOLE_DATASET_LATENCY, TOTAL_BYTES_READ MB_READ_PER_SECOND
 
 Where:
 - `ITERATION` is number of iteration.
@@ -96,7 +96,7 @@ Where:
 - `READING_FIRST_STUDY_LATENCY` is latency of reading first study in milliseconds.
 - `READING_WHOLE_DATASET_LATENCY` is total latency of reading whole dataset in milliseconds.
 - `TOTAL_BYTES_READ` is total number of bytes read for the whole dataset.
-- `BYTES_READ_PER_SECOND` is bytes read per second for the whole dataset.
+- `MB_READ_PER_SECOND` is megabytes read per second for the whole dataset.
 
 ### Retrieve study benchmark
 
@@ -119,7 +119,7 @@ public dataset and store gathered metrics to `results.csv` file.
 The format of the output file is CSV. Each line represents metrics of separate WADO request and
 has the following format:
 
-    ITERATION, RESPONSE_LATENCY, READ_LATENCY, TOTAL_LATENCY, BYTES_READ, TRANSFER_RATE
+    ITERATION, QUERYING_INSTANCES_LATENCY, FIRST_BYTE_RECEIVED_LATENCY, READING_FIRST_INSTANCE_LATENCY, READING_WHOLE_STUDY_LATENCY, TOTAL_BYTES_READ, MB_READ_PER_SECOND
 
 Where:
 - `ITERATION` is number of iteration.
@@ -128,4 +128,4 @@ Where:
 - `READING_FIRST_INSTANCE_LATENCY` is latency of reading first instance in milliseconds.
 - `READING_WHOLE_STUDY_LATENCY` is total latency of reading whole study in milliseconds.
 - `TOTAL_BYTES_READ` is total number of bytes read for the whole study.
-- `BYTES_READ_PER_SECOND` is bytes read per second for the whole study.
+- `MB_READ_PER_SECOND` is megabytes read per second for the whole study.

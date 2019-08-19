@@ -23,11 +23,11 @@ import org.apache.commons.math3.stat.descriptive.rank.Min;
 import org.apache.commons.math3.stat.descriptive.rank.Percentile;
 
 /**
- * Accumulates latencies from iterations and allows to calculate statistics.
+ * Accumulates metric values from iterations and allows to calculate statistics.
  * 
  * @author Mikhail Ukhlin
  */
-public class LatencyAggregates {
+public class MetricAggregates {
 
   /**
    * Median percentile.
@@ -75,9 +75,9 @@ public class LatencyAggregates {
   public static final double P99 = 99.0;
   
   /**
-   * Buffer to store latencies from iterations for further statistics calculations.
+   * Buffer to store metric values from iterations for further statistics calculations.
    */
-  private final double[] latencies;
+  private final double[] values;
   
   /**
    * Current number of completed iterations.
@@ -95,49 +95,49 @@ public class LatencyAggregates {
   private Percentile percentile;
   
   /**
-   * Constructs a new {@code LatencyAggregates} with the specified number of iterations.
+   * Constructs a new {@code MetricAggregates} with the specified number of iterations.
    * 
    * @param iterations Number of iterations.
    */
-  public LatencyAggregates(int iterations) {
-    this.latencies = new double[iterations];
+  public MetricAggregates(int iterations) {
+    this.values = new double[iterations];
   }
   
   /**
-   * Adds latency from completed iteration.
+   * Adds metric value from completed iteration.
    * 
-   * @param latency The latency to add.
+   * @param value The value to add.
    */
-  public void addLatency(long latency) {
-    latencies[count++] = latency;
+  public void addValue(double value) {
+    values[count++] = value;
   }
   
   /**
-   * Returns minimum latency.
+   * Returns minimum value.
    * 
-   * @return Minimum latency.
+   * @return Minimum value.
    */
   public double getMin() {
-    return new Min().evaluate(latencies, 0, count);
+    return new Min().evaluate(values, 0, count);
   }
   
   /**
-   * Returns maximum latency.
+   * Returns maximum value.
    * 
-   * @return Maximum latency.
+   * @return Maximum value.
    */
   public double getMax() {
-    return new Max().evaluate(latencies, 0, count);
+    return new Max().evaluate(values, 0, count);
   }
   
   /**
-   * Returns mean latency.
+   * Returns mean value.
    * 
-   * @return Mean latency.
+   * @return Mean value.
    */
   public double getMean() {
     if (mean == null) {
-      mean = new Mean().evaluate(latencies, 0, count);
+      mean = new Mean().evaluate(values, 0, count);
     }
     return mean;
   }
@@ -148,7 +148,7 @@ public class LatencyAggregates {
    * @return Standard deviation.
    */
   public double getStddev() {
-    return new StandardDeviation().evaluate(latencies, getMean(), 0, count);
+    return new StandardDeviation().evaluate(values, getMean(), 0, count);
   }
   
   /**
@@ -160,8 +160,8 @@ public class LatencyAggregates {
   public double getPercentile(double p) {
     if (percentile == null) {
       percentile = new Percentile();
-      Arrays.sort(latencies, 0, count);
-      percentile.setData(latencies, 0, count);
+      Arrays.sort(values, 0, count);
+      percentile.setData(values, 0, count);
     }
     return percentile.evaluate(p);
   }
