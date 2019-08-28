@@ -85,7 +85,7 @@ An example command line execution:
 
     java -jar healthcare-imaging-performance-test-X.Y.Z-jar-with-dependencies.jar benchmark download-dataset -i 3 -t 5 -o results.csv -p chc-nih-chest-xray -l us-central1 -d nih-chest-xray -s nih-chest-xray
 
-In the example abovem the `download-dataset` benchmark will:
+In the example above the `download-dataset` benchmark will:
 
 * Execute 3 times
 * Use a maximum of 5 threads to read studies in parallel from the [NIH Chest X-ray](https://cloud.google.com/healthcare/docs/resources/public-datasets/nih-chest#cloud-healthcare-api) public dataset
