@@ -97,7 +97,7 @@ has the following format:
     ITERATION, QUERYING_STUDIES_LATENCY, FIRST_BYTE_RECEIVED_LATENCY, READING_FIRST_STUDY_LATENCY, READING_WHOLE_DATASET_LATENCY, TOTAL_BYTES_READ MB_READ_PER_SECOND
 
 Where:
-- `ITERATION` is the number of iteration.
+- `ITERATION` is the number of iterations.
 - `QUERYING_STUDIES_LATENCY` is the latency of querying studies in milliseconds.
 - `FIRST_BYTE_RECEIVED_LATENCY` is the latency of the first byte received in milliseconds.
 - `READING_FIRST_STUDY_LATENCY` is the latency of reading the first study in milliseconds.
@@ -108,7 +108,7 @@ Where:
 ### Retrieve study benchmark
 
 This benchmark shows how quickly you can retrieve a whole study. It involves sending requests to get instance information (QIDO) while also sending
-paralleled GET requests to retrieve each instance (WADO).
+parallel GET requests to retrieve each instance (WADO).
 
 The name of this benchmark is `retrieve-study`. The command line has two additional required options:
 `-y` and `--dicom-study`. `--dicom_study` is the ID of the study in the DICOM store.
