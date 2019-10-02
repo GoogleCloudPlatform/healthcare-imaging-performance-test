@@ -16,6 +16,8 @@ package com.google.chcapi.perfdiag.benchmark.config;
 
 import java.io.File;
 
+import java.net.URL;
+
 import picocli.CommandLine.Option;
 
 /**
@@ -24,6 +26,16 @@ import picocli.CommandLine.Option;
  * @author Mikhail Ukhlin
  */
 public class CommonConfig {
+  
+  /**
+   * URL of DICOM API endpoint.
+   */
+  @Option(
+      names = {"-e", "--endpoint"},
+      descriptionKey = "option.endpoint.description",
+      required = false
+  )
+  private URL endpoint = null;
   
   /**
    * How many times the routine is executed.
@@ -54,6 +66,15 @@ public class CommonConfig {
       required = false
   )
   private File outputFile = null;
+  
+  /**
+   * Returns URL of DICOM API endpoint.
+   * 
+   * @return URL of DICOM API endpoint.
+   */
+  public URL getEndpoint() {
+    return endpoint;
+  }
   
   /**
    * Returns number of iterations the routine is executed.

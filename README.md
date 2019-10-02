@@ -56,6 +56,8 @@ To run the tool:
    where `X.Y.Z` is the version of the tool, `BENCHMARK` is the name of the benchmark and `OPTIONS` is a list of the following options:
   
 ```
+  -e, --endpoint
+  Optional URL of DICOM API endpoint (default is https://healthcare.googleapis.com/v1beta1).
   -i, --iterations
   Optional number of iterations for how many times the routine is executed (default is 1).
   -t, --max-threads

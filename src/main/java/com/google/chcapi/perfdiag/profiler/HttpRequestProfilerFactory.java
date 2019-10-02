@@ -14,17 +14,23 @@
 
 package com.google.chcapi.perfdiag.profiler;
 
+import java.util.Arrays;
+
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
+
+import java.net.URL;
+import java.net.URLEncoder;
+
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpUriRequest;
+
 import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
+
 import com.google.chcapi.perfdiag.benchmark.BenchmarkException;
 import com.google.chcapi.perfdiag.benchmark.config.DicomStoreConfig;
 import com.google.chcapi.perfdiag.benchmark.config.DicomStudyConfig;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpUriRequest;
 
 /**
  * Factory class that allows to create HTTP profiling requests to Google Cloud Healthcare API.
@@ -39,12 +45,8 @@ public final class HttpRequestProfilerFactory {
     throw new IllegalAccessError();
   }
 
-  /* Root URL of Google Cloud Healthcare API */
-  private static final String API_ROOT_URL = "https://healthcare.googleapis.com/v1beta1";
-
   /* OAuth 2.0 credential obtained using Google Application Default Credentials mechanism */
   private static final GoogleCredential CREDENTIAL;
-
   static {
     try {
       CREDENTIAL =
@@ -55,6 +57,25 @@ public final class HttpRequestProfilerFactory {
                       "https://www.googleapis.com/auth/cloudplatformprojects.readonly"));
     } catch (IOException e) {
       throw new IllegalStateException(e.getMessage());
+    }
+  }
+
+  /**
+   * Root URL of Google Cloud Healthcare API endpoint.
+   */
+  private static String endpoint = "https://healthcare.googleapis.com/v1beta1";
+
+  /**
+   * Sets root URL of Google Cloud Healthcare API endpoint.
+   * 
+   * @param url Root URL of Google Cloud Healthcare API endpoint.
+   */
+  public static void setEndpoint(URL url) {
+    if (url != null) {
+      final String endpoint = url.toString();
+      HttpRequestProfilerFactory.endpoint = endpoint.endsWith("/")
+          ? endpoint.substring(0, endpoint.length() - 1)
+          : endpoint;
     }
   }
 
@@ -167,7 +188,7 @@ public final class HttpRequestProfilerFactory {
    * @return DICOM Web request URI as {@code StringBuilder} instance for further URI construction.
    */
   private static StringBuilder buildDicomWebURI(DicomStoreConfig config) {
-    return new StringBuilder(API_ROOT_URL)
+    return new StringBuilder(endpoint)
         .append("/projects/")
         .append(encodeURIToken(config.getProjectId()))
         .append("/locations/")
