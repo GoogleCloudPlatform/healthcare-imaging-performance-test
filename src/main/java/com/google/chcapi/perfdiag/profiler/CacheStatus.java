@@ -83,9 +83,9 @@ public enum CacheStatus {
       String value = header.getValue();
       if (value != null) {
         value = value.toUpperCase();
-        if (value.equals(HIT.name())) {
+        if (value.equals("HIT")) {
           return HIT;
-        } else if (value.equals(MISS.name())) {
+        } else if (value.equals("MISS")) {
           return MISS;
         }
       }
@@ -96,9 +96,9 @@ public enum CacheStatus {
       String value = header.getValue();
       if (value != null) {
         value = value.toUpperCase();
-        if (value.contains(HIT.name())) {
+        if (value.equals("HIT") || value.contains("HIT FROM")) {
           return HIT;
-        } else if (value.contains(MISS.name())) {
+        } else if (value.equals("MISS") || value.contains("MISS FROM")) {
           return MISS;
         }
       }
