@@ -154,11 +154,15 @@ public class DownloadDatasetBenchmark extends Benchmark {
       final long totalLatency = System.currentTimeMillis() - iterationStartTime;
       
       // Print requests metrics and count bytes read
+      int cacheHits = 0;
+      int cacheMisses = 0;
       long totalBytesRead = queryStudiesMetrics.getBytesRead();
       for (Future<HttpRequestMetrics> future : futures) {
         try {
           final HttpRequestMetrics metrics = future.get();
           totalBytesRead += metrics.getBytesRead();
+          cacheHits = metrics.getCacheStatus().incrementHits(cacheHits);
+          cacheMisses = metrics.getCacheStatus().incrementMisses(cacheMisses);
         } catch (Exception e) {
           printRequestFailed(e);
         }
@@ -175,7 +179,7 @@ public class DownloadDatasetBenchmark extends Benchmark {
       // Print iteration metrics to stdout
       printDownloadDatasetMetrics(queryStudiesMetrics.getTotalLatency(),
           firstResponseMetrics.get().getResponseLatency(), firstStudyMetrics.get().getTotalLatency(),
-          totalLatency, totalBytesRead, transferRate);
+          totalLatency, totalBytesRead, transferRate, cacheHits, cacheMisses);
       
       // Print iteration metrics to CSV file if output option is specified
       if (output != null) {

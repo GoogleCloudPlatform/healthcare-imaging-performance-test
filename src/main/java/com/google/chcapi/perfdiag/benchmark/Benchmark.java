@@ -69,13 +69,15 @@ public abstract class Benchmark extends BenchmarkMessages implements Runnable {
   }
   
   /**
-   * Acquires access token before benchmark execution.
+   * Sets custom DICOM API endpoint if provided and acquires access token before benchmark
+   * execution.
    * 
    * @throws BenchmarkException if an error occurred.
    * @see HttpRequestProfilerFactory#refreshToken()
    */
   private void authorize() {
     try {
+      HttpRequestProfilerFactory.setEndpoint(commonConfig.getEndpoint());
       HttpRequestProfilerFactory.refreshToken();
     } catch (Exception e) {
       throw BenchmarkException.authorizationFailed(e);

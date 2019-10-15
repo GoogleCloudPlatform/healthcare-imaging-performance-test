@@ -14,10 +14,12 @@
 
 package com.google.chcapi.perfdiag.profiler;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.IOException;
+
 import org.apache.commons.io.IOUtils;
+
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpResponseException;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -96,14 +98,15 @@ public class HttpRequestProfiler {
       // Does content exist?
       if (status == HttpStatus.SC_NO_CONTENT) {
         // No content
-        return new HttpRequestMetrics(startTime, responseTime, System.currentTimeMillis(), 0L);
+        return new HttpRequestMetrics(startTime, responseTime, System.currentTimeMillis(), 0L,
+            CacheStatus.fromResponse(response));
       }
 
       // Read content
       try (InputStream input = response.getEntity().getContent()) {
         final long bytesRead = IOUtils.copyLarge(input, stream);
-        return new HttpRequestMetrics(
-            startTime, responseTime, System.currentTimeMillis(), bytesRead);
+        return new HttpRequestMetrics(startTime, responseTime, System.currentTimeMillis(),
+            bytesRead, CacheStatus.fromResponse(response));
       }
     }
   }

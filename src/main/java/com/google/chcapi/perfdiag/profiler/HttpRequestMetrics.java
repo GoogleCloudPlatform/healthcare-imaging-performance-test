@@ -33,6 +33,9 @@ public class HttpRequestMetrics {
   /** Number of bytes read. */
   private final long bytesRead;
 
+  /** Response cache status. */
+  private final CacheStatus cacheStatus;
+
   /**
    * Constructs a new HTTP request metrics with the specified start time, response time, end time
    * and number of bytes read.
@@ -41,12 +44,15 @@ public class HttpRequestMetrics {
    * @param responseTime Time in milliseconds when response has been received.
    * @param endTime Time in milliseconds when response content has been retrieved.
    * @param bytesRead Number of bytes read.
+   * @param cacheStatus Response cache status.
    */
-  public HttpRequestMetrics(long startTime, long responseTime, long endTime, long bytesRead) {
+  public HttpRequestMetrics(long startTime, long responseTime, long endTime, long bytesRead,
+      CacheStatus cacheStatus) {
     this.startTime = startTime;
     this.responseTime = responseTime;
     this.endTime = endTime;
     this.bytesRead = bytesRead;
+    this.cacheStatus = cacheStatus;
   }
 
   /**
@@ -111,7 +117,16 @@ public class HttpRequestMetrics {
   public long getBytesRead() {
     return bytesRead;
   }
-
+  
+  /**
+   * Returns response cache status.
+   * 
+   * @return Response cache status.
+   */
+  public CacheStatus getCacheStatus() {
+    return cacheStatus;
+  }
+  
   /**
    * Returns bytes read per second.
    *

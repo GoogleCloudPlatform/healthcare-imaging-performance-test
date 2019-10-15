@@ -161,11 +161,15 @@ public class RetrieveStudyBenchmark extends Benchmark {
       }
       
       // Print requests metrics and count bytes read
+      int cacheHits = 0;
+      int cacheMisses = 0;
       long totalBytesRead = queryInstancesMetrics.getBytesRead();
       for (Future<HttpRequestMetrics> future : futures) {
         try {
           final HttpRequestMetrics metrics = future.get();
           totalBytesRead += metrics.getBytesRead();
+          cacheHits = metrics.getCacheStatus().incrementHits(cacheHits);
+          cacheMisses = metrics.getCacheStatus().incrementMisses(cacheMisses);
         } catch (Exception e) {
           printRequestFailed(e);
         }
@@ -183,7 +187,7 @@ public class RetrieveStudyBenchmark extends Benchmark {
       printRetrieveStudyMetrics(queryInstancesMetrics.getTotalLatency(),
           firstResponseMetrics.get().getResponseLatency(),
           firstInstanceMetrics.get().getTotalLatency(), totalLatency, totalBytesRead,
-          transferRate);
+          transferRate, cacheHits, cacheMisses);
       
       // Print iteration metrics to CSV file if output option is specified
       if (output != null) {

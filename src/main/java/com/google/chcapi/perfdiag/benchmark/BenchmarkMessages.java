@@ -131,17 +131,21 @@ public abstract class BenchmarkMessages {
    * @param totalLatency Latency of reading whole study.
    * @param totalBytesRead Total bytes read.
    * @param transferRate Bytes read per second.
+   * @param cacheHits Number of cache hits.
+   * @param cacheMisses Number of cache misses.
    */
   public static void printRetrieveStudyMetrics(long queryInstancesLatency,
       long firstResponseLatency, long firstInstanceLatency, long totalLatency, long totalBytesRead,
-      double transferRate) {
+      double transferRate, int cacheHits, int cacheMisses) {
     print("message.retrieveStudyMetrics",
         queryInstancesLatency,
         firstResponseLatency,
         firstInstanceLatency,
         totalLatency,
         totalBytesRead,
-        transferRate);
+        transferRate,
+        cacheHits,
+        cacheMisses);
   }
   
   /**
@@ -173,17 +177,21 @@ public abstract class BenchmarkMessages {
    * @param totalLatency Latency of downloading the whole dataset.
    * @param totalBytesRead Total bytes read.
    * @param transferRate Bytes read per second.
+   * @param cacheHits Number of cache hits.
+   * @param cacheMisses Number of cache misses.
    */
   public static void printDownloadDatasetMetrics(long queryStudiesLatency,
       long firstResponseLatency, long firstStudyLatency, long totalLatency, long totalBytesRead,
-      double transferRate) {
+      double transferRate, int cacheHits, int cacheMisses) {
     print("message.downloadDatasetMetrics",
         queryStudiesLatency,
         firstResponseLatency,
         firstStudyLatency,
         totalLatency,
         totalBytesRead,
-        transferRate);
+        transferRate,
+        cacheHits,
+        cacheMisses);
   }
   
   /**
