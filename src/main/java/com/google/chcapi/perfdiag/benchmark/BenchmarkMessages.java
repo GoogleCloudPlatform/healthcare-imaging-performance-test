@@ -107,10 +107,11 @@ public abstract class BenchmarkMessages {
    * Prints study instances found message to stdout.
    * 
    * @param instances Number of found study instances.
+   * @param frames Number of frames.
    * @param threads Maximum number of threads to run in parallel.
    */
-  public static void printInstancesFound(int instances, int threads) {
-    print("message.instancesFound", instances, Math.min(instances, threads));
+  public static void printInstancesFound(int instances, int frames, int threads) {
+    print("message.instancesFound", instances, frames, Math.min(frames, threads));
   }
   
   /**
@@ -131,12 +132,13 @@ public abstract class BenchmarkMessages {
    * @param totalLatency Latency of reading whole study.
    * @param totalBytesRead Total bytes read.
    * @param transferRate Bytes read per second.
+   * @param frameRate Frames read per second.
    * @param cacheHits Number of cache hits.
    * @param cacheMisses Number of cache misses.
    */
   public static void printRetrieveStudyMetrics(long queryInstancesLatency,
       long firstResponseLatency, long firstInstanceLatency, long totalLatency, long totalBytesRead,
-      double transferRate, int cacheHits, int cacheMisses) {
+      double transferRate, double frameRate, int cacheHits, int cacheMisses) {
     print("message.retrieveStudyMetrics",
         queryInstancesLatency,
         firstResponseLatency,
@@ -144,6 +146,7 @@ public abstract class BenchmarkMessages {
         totalLatency,
         totalBytesRead,
         transferRate,
+        frameRate,
         cacheHits,
         cacheMisses);
   }
@@ -153,19 +156,97 @@ public abstract class BenchmarkMessages {
    * 
    * @param queryInstancesAggregates Aggregates for latency of querying instances.
    * @param firstResponseAggregates Aggregates for latency of first byte received.
-   * @param firstInstanceAggregates Aggregates for latency of reading first instance.
+   * @param firstFrameAggregates Aggregates for latency of reading first frame.
    * @param totalAggregates Aggregates for latency of downloading the whole study.
    * @param transferRateAggregates Aggregates for transfer rate of downloading the whole study.
+   * @param frameRateAggregates Aggregates for frame rate of downloading the whole study.
    */
   public static void printRetrieveStudyAggregates(
       MetricAggregates queryInstancesAggregates,
       MetricAggregates firstResponseAggregates,
-      MetricAggregates firstInstanceAggregates,
+      MetricAggregates firstFrameAggregates,
       MetricAggregates totalAggregates,
-      MetricAggregates transferRateAggregates) {
-    print("message.retrieveStudyAggregatesHeader");
-    printAggregates(queryInstancesAggregates, firstResponseAggregates, firstInstanceAggregates,
-        totalAggregates, transferRateAggregates);
+      MetricAggregates transferRateAggregates,
+      MetricAggregates frameRateAggregates) {
+    print("message.retrieveStudyAggregates",
+        queryInstancesAggregates.getMin(),
+        firstResponseAggregates.getMin(),
+        firstFrameAggregates.getMin(),
+        totalAggregates.getMin(),
+        transferRateAggregates.getMin(),
+        frameRateAggregates.getMin(),
+        queryInstancesAggregates.getMax(),
+        firstResponseAggregates.getMax(),
+        firstFrameAggregates.getMax(),
+        totalAggregates.getMax(),
+        transferRateAggregates.getMax(),
+        frameRateAggregates.getMax(),
+        queryInstancesAggregates.getMean(),
+        firstResponseAggregates.getMean(),
+        firstFrameAggregates.getMean(),
+        totalAggregates.getMean(),
+        transferRateAggregates.getMean(),
+        frameRateAggregates.getMean(),
+        queryInstancesAggregates.getStddev(),
+        firstResponseAggregates.getStddev(),
+        firstFrameAggregates.getStddev(),
+        totalAggregates.getStddev(),
+        transferRateAggregates.getStddev(),
+        frameRateAggregates.getStddev(),
+        queryInstancesAggregates.getPercentile(MetricAggregates.MEDIAN),
+        firstResponseAggregates.getPercentile(MetricAggregates.MEDIAN),
+        firstFrameAggregates.getPercentile(MetricAggregates.MEDIAN),
+        totalAggregates.getPercentile(MetricAggregates.MEDIAN),
+        transferRateAggregates.getPercentile(MetricAggregates.MEDIAN),
+        frameRateAggregates.getPercentile(MetricAggregates.MEDIAN),
+        queryInstancesAggregates.getPercentile(MetricAggregates.P1),
+        firstResponseAggregates.getPercentile(MetricAggregates.P1),
+        firstFrameAggregates.getPercentile(MetricAggregates.P1),
+        totalAggregates.getPercentile(MetricAggregates.P1),
+        transferRateAggregates.getPercentile(MetricAggregates.P1),
+        frameRateAggregates.getPercentile(MetricAggregates.P1),
+        queryInstancesAggregates.getPercentile(MetricAggregates.P2),
+        firstResponseAggregates.getPercentile(MetricAggregates.P2),
+        firstFrameAggregates.getPercentile(MetricAggregates.P2),
+        totalAggregates.getPercentile(MetricAggregates.P2),
+        transferRateAggregates.getPercentile(MetricAggregates.P2),
+        frameRateAggregates.getPercentile(MetricAggregates.P2),
+        queryInstancesAggregates.getPercentile(MetricAggregates.P5),
+        firstResponseAggregates.getPercentile(MetricAggregates.P5),
+        firstFrameAggregates.getPercentile(MetricAggregates.P5),
+        totalAggregates.getPercentile(MetricAggregates.P5),
+        transferRateAggregates.getPercentile(MetricAggregates.P5),
+        frameRateAggregates.getPercentile(MetricAggregates.P5),
+        queryInstancesAggregates.getPercentile(MetricAggregates.P10),
+        firstResponseAggregates.getPercentile(MetricAggregates.P10),
+        firstFrameAggregates.getPercentile(MetricAggregates.P10),
+        totalAggregates.getPercentile(MetricAggregates.P10),
+        transferRateAggregates.getPercentile(MetricAggregates.P10),
+        frameRateAggregates.getPercentile(MetricAggregates.P10),
+        queryInstancesAggregates.getPercentile(MetricAggregates.P90),
+        firstResponseAggregates.getPercentile(MetricAggregates.P90),
+        firstFrameAggregates.getPercentile(MetricAggregates.P90),
+        totalAggregates.getPercentile(MetricAggregates.P90),
+        transferRateAggregates.getPercentile(MetricAggregates.P90),
+        frameRateAggregates.getPercentile(MetricAggregates.P90),
+        queryInstancesAggregates.getPercentile(MetricAggregates.P95),
+        firstResponseAggregates.getPercentile(MetricAggregates.P95),
+        firstFrameAggregates.getPercentile(MetricAggregates.P95),
+        totalAggregates.getPercentile(MetricAggregates.P95),
+        transferRateAggregates.getPercentile(MetricAggregates.P95),
+        frameRateAggregates.getPercentile(MetricAggregates.P95),
+        queryInstancesAggregates.getPercentile(MetricAggregates.P98),
+        firstResponseAggregates.getPercentile(MetricAggregates.P98),
+        firstFrameAggregates.getPercentile(MetricAggregates.P98),
+        totalAggregates.getPercentile(MetricAggregates.P98),
+        transferRateAggregates.getPercentile(MetricAggregates.P98),
+        frameRateAggregates.getPercentile(MetricAggregates.P98),
+        queryInstancesAggregates.getPercentile(MetricAggregates.P99),
+        firstResponseAggregates.getPercentile(MetricAggregates.P99),
+        firstFrameAggregates.getPercentile(MetricAggregates.P99),
+        totalAggregates.getPercentile(MetricAggregates.P99),
+        transferRateAggregates.getPercentile(MetricAggregates.P99),
+        frameRateAggregates.getPercentile(MetricAggregates.P99));
   }
   
   /**
@@ -209,92 +290,72 @@ public abstract class BenchmarkMessages {
       MetricAggregates firstStudyAggregates,
       MetricAggregates totalAggregates,
       MetricAggregates transferRateAggregates) {
-    print("message.downloadDatasetAggregatesHeader");
-    printAggregates(queryStudiesAggregates, firstResponseAggregates, firstStudyAggregates,
-        totalAggregates, transferRateAggregates);
-  }
-  
-  /**
-   * Prints aggregates of a benchmark to stdout.
-   * 
-   * @param queryIDsAggregates Aggregates for latency of querying IDs.
-   * @param firstResponseAggregates Aggregates for latency of first byte received.
-   * @param firstDownloadAggregates Aggregates for latency of reading first item.
-   * @param totalAggregates Aggregates for latency of downloading the whole dataset.
-   * @param transferRateAggregates Aggregates for transfer rate of downloading the whole dataset.
-   */
-  public static void printAggregates(
-      MetricAggregates queryIDsAggregates,
-      MetricAggregates firstResponseAggregates,
-      MetricAggregates firstDownloadAggregates,
-      MetricAggregates totalAggregates,
-      MetricAggregates transferRateAggregates) {
-    print("message.aggregates",
-        queryIDsAggregates.getMin(),
+    print("message.downloadDatasetAggregates",
+        queryStudiesAggregates.getMin(),
         firstResponseAggregates.getMin(),
-        firstDownloadAggregates.getMin(),
+        firstStudyAggregates.getMin(),
         totalAggregates.getMin(),
         transferRateAggregates.getMin(),
-        queryIDsAggregates.getMax(),
+        queryStudiesAggregates.getMax(),
         firstResponseAggregates.getMax(),
-        firstDownloadAggregates.getMax(),
+        firstStudyAggregates.getMax(),
         totalAggregates.getMax(),
         transferRateAggregates.getMax(),
-        queryIDsAggregates.getMean(),
+        queryStudiesAggregates.getMean(),
         firstResponseAggregates.getMean(),
-        firstDownloadAggregates.getMean(),
+        firstStudyAggregates.getMean(),
         totalAggregates.getMean(),
         transferRateAggregates.getMean(),
-        queryIDsAggregates.getStddev(),
+        queryStudiesAggregates.getStddev(),
         firstResponseAggregates.getStddev(),
-        firstDownloadAggregates.getStddev(),
+        firstStudyAggregates.getStddev(),
         totalAggregates.getStddev(),
         transferRateAggregates.getStddev(),
-        queryIDsAggregates.getPercentile(MetricAggregates.MEDIAN),
+        queryStudiesAggregates.getPercentile(MetricAggregates.MEDIAN),
         firstResponseAggregates.getPercentile(MetricAggregates.MEDIAN),
-        firstDownloadAggregates.getPercentile(MetricAggregates.MEDIAN),
+        firstStudyAggregates.getPercentile(MetricAggregates.MEDIAN),
         totalAggregates.getPercentile(MetricAggregates.MEDIAN),
         transferRateAggregates.getPercentile(MetricAggregates.MEDIAN),
-        queryIDsAggregates.getPercentile(MetricAggregates.P1),
+        queryStudiesAggregates.getPercentile(MetricAggregates.P1),
         firstResponseAggregates.getPercentile(MetricAggregates.P1),
-        firstDownloadAggregates.getPercentile(MetricAggregates.P1),
+        firstStudyAggregates.getPercentile(MetricAggregates.P1),
         totalAggregates.getPercentile(MetricAggregates.P1),
         transferRateAggregates.getPercentile(MetricAggregates.P1),
-        queryIDsAggregates.getPercentile(MetricAggregates.P2),
+        queryStudiesAggregates.getPercentile(MetricAggregates.P2),
         firstResponseAggregates.getPercentile(MetricAggregates.P2),
-        firstDownloadAggregates.getPercentile(MetricAggregates.P2),
+        firstStudyAggregates.getPercentile(MetricAggregates.P2),
         totalAggregates.getPercentile(MetricAggregates.P2),
         transferRateAggregates.getPercentile(MetricAggregates.P2),
-        queryIDsAggregates.getPercentile(MetricAggregates.P5),
+        queryStudiesAggregates.getPercentile(MetricAggregates.P5),
         firstResponseAggregates.getPercentile(MetricAggregates.P5),
-        firstDownloadAggregates.getPercentile(MetricAggregates.P5),
+        firstStudyAggregates.getPercentile(MetricAggregates.P5),
         totalAggregates.getPercentile(MetricAggregates.P5),
         transferRateAggregates.getPercentile(MetricAggregates.P5),
-        queryIDsAggregates.getPercentile(MetricAggregates.P10),
+        queryStudiesAggregates.getPercentile(MetricAggregates.P10),
         firstResponseAggregates.getPercentile(MetricAggregates.P10),
-        firstDownloadAggregates.getPercentile(MetricAggregates.P10),
+        firstStudyAggregates.getPercentile(MetricAggregates.P10),
         totalAggregates.getPercentile(MetricAggregates.P10),
         transferRateAggregates.getPercentile(MetricAggregates.P10),
-        queryIDsAggregates.getPercentile(MetricAggregates.P90),
+        queryStudiesAggregates.getPercentile(MetricAggregates.P90),
         firstResponseAggregates.getPercentile(MetricAggregates.P90),
-        firstDownloadAggregates.getPercentile(MetricAggregates.P90),
+        firstStudyAggregates.getPercentile(MetricAggregates.P90),
         totalAggregates.getPercentile(MetricAggregates.P90),
         transferRateAggregates.getPercentile(MetricAggregates.P90),
-        queryIDsAggregates.getPercentile(MetricAggregates.P95),
+        queryStudiesAggregates.getPercentile(MetricAggregates.P95),
         firstResponseAggregates.getPercentile(MetricAggregates.P95),
-        firstDownloadAggregates.getPercentile(MetricAggregates.P95),
+        firstStudyAggregates.getPercentile(MetricAggregates.P95),
         totalAggregates.getPercentile(MetricAggregates.P95),
         transferRateAggregates.getPercentile(MetricAggregates.P95),
-        queryIDsAggregates.getPercentile(MetricAggregates.P98),
+        queryStudiesAggregates.getPercentile(MetricAggregates.P98),
         firstResponseAggregates.getPercentile(MetricAggregates.P98),
-        firstDownloadAggregates.getPercentile(MetricAggregates.P98),
+        firstStudyAggregates.getPercentile(MetricAggregates.P98),
         totalAggregates.getPercentile(MetricAggregates.P98),
         transferRateAggregates.getPercentile(MetricAggregates.P98),
-        queryIDsAggregates.getPercentile(MetricAggregates.P99),
+        queryStudiesAggregates.getPercentile(MetricAggregates.P99),
         firstResponseAggregates.getPercentile(MetricAggregates.P99),
-        firstDownloadAggregates.getPercentile(MetricAggregates.P99),
+        firstStudyAggregates.getPercentile(MetricAggregates.P99),
         totalAggregates.getPercentile(MetricAggregates.P99),
         transferRateAggregates.getPercentile(MetricAggregates.P99));
   }
-  
+
 }

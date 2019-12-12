@@ -34,7 +34,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 
-import com.google.chcapi.perfdiag.model.Instance;
+import com.google.chcapi.perfdiag.model.Attributes;
 import com.google.chcapi.perfdiag.benchmark.config.DicomStudyConfig;
 import com.google.chcapi.perfdiag.benchmark.stats.MetricAggregates;
 import com.google.chcapi.perfdiag.profiler.HttpRequestProfiler;
@@ -68,9 +68,9 @@ public class RetrieveStudyBenchmark extends Benchmark {
   private MetricAggregates firstResponseAggregates;
   
   /**
-   * Aggregates for latency of reading first instance.
+   * Aggregates for latency of reading first frame.
    */
-  private MetricAggregates firstInstanceAggregates;
+  private MetricAggregates firstFrameAggregates;
   
   /**
    * Aggregates for latency of reading whole study.
@@ -83,6 +83,11 @@ public class RetrieveStudyBenchmark extends Benchmark {
   private MetricAggregates transferRateAggregates;
   
   /**
+   * Aggregates for frame rate of downloading the whole study.
+   */
+  private MetricAggregates frameRateAggregates;
+  
+  /**
    * Validates configuration and initializes aggregates.
    */
   @Override
@@ -91,9 +96,10 @@ public class RetrieveStudyBenchmark extends Benchmark {
     final int iterations = commonConfig.getIterations();
     queryInstancesAggregates = new MetricAggregates(iterations);
     firstResponseAggregates = new MetricAggregates(iterations);
-    firstInstanceAggregates = new MetricAggregates(iterations);
+    firstFrameAggregates = new MetricAggregates(iterations);
     totalAggregates = new MetricAggregates(iterations);
     transferRateAggregates = new MetricAggregates(iterations);
+    frameRateAggregates = new MetricAggregates(iterations);
   }
   
   /**
@@ -107,7 +113,7 @@ public class RetrieveStudyBenchmark extends Benchmark {
   @Override
   protected void runIteration(int iteration, PrintStream output) throws Exception {
     final AtomicReference<HttpRequestMetrics> firstResponseMetrics = new AtomicReference<>();
-    final AtomicReference<HttpRequestMetrics> firstInstanceMetrics = new AtomicReference<>();
+    final AtomicReference<HttpRequestMetrics> firstFrameMetrics = new AtomicReference<>();
     
     // Fetch list of available study instances
     final HttpRequestProfiler queryInstancesRequest =
@@ -115,39 +121,43 @@ public class RetrieveStudyBenchmark extends Benchmark {
     final ByteArrayOutputStream buffer = new ByteArrayOutputStream();
     final long iterationStartTime = System.currentTimeMillis();
     final HttpRequestMetrics queryInstancesMetrics = queryInstancesRequest.execute(buffer);
-    final List<Instance> instances = MAPPER.readValue(buffer.toByteArray(),
-        new TypeReference<List<Instance>>() {});
-    printInstancesFound(instances.size(), commonConfig.getMaxThreads());
+    final List<Attributes> instances = MAPPER.readValue(buffer.toByteArray(),
+        new TypeReference<List<Attributes>>() {});
+    int frameCount = instances.stream().mapToInt(Attributes::getNumberOfFrames).sum();
+    printInstancesFound(instances.size(), frameCount, commonConfig.getMaxThreads());
     
     if (instances.size() > 0) {
-      // Create separate task for each study instance
+      // Create separate task for each frame
       final ExecutorService pool = Executors.newFixedThreadPool(commonConfig.getMaxThreads());
       final List<Callable<HttpRequestMetrics>> tasks = new ArrayList<>();
-      for (Instance instance : instances) {
+      for (Attributes instance : instances) {
         final String seriesId = instance.getSeriesUID();
         final String instanceId = instance.getInstanceUID();
         if (!(seriesId == null || instanceId == null)) {
-          tasks.add(new Callable<HttpRequestMetrics>() {
-            @Override public HttpRequestMetrics call() throws Exception {
-              // Execute request
-              final HttpRequestProfiler request =
-                  HttpRequestProfilerFactory.createRetrieveDicomStudyInstanceRequest(dicomStudyConfig,
-                      seriesId, instanceId);
-              final HttpRequestMetrics metrics = request.execute(NullOutputStream.NULL_OUTPUT_STREAM);
-              
-              // Update first response and first instance metrics
-              firstResponseMetrics.updateAndGet(m -> {
-                return m == null || metrics.getResponseTime() < m.getResponseTime() ? metrics : m;
-              });
-              firstInstanceMetrics.updateAndGet(m -> {
-                return m == null || metrics.getEndTime() < m.getEndTime() ? metrics : m;
-              });
-              
-              // Print progress
-              printProgress();
-              return metrics;
-            }
-          });
+          for (int i = 0; i < instance.getNumberOfFrames(); i++) {
+            final int frameIndex = i + 1;
+            tasks.add(new Callable<HttpRequestMetrics>() {
+              @Override public HttpRequestMetrics call() throws Exception {
+                // Execute request
+                final HttpRequestProfiler request =
+                    HttpRequestProfilerFactory.createRetrieveDicomInstanceFrameRequest(dicomStudyConfig,
+                        seriesId, instanceId, frameIndex);
+                final HttpRequestMetrics metrics = request.execute(NullOutputStream.NULL_OUTPUT_STREAM);
+                
+                // Update first response and first frame metrics
+                firstResponseMetrics.updateAndGet(m -> {
+                  return m == null || metrics.getResponseTime() < m.getResponseTime() ? metrics : m;
+                });
+                firstFrameMetrics.updateAndGet(m -> {
+                  return m == null || metrics.getEndTime() < m.getEndTime() ? metrics : m;
+                });
+                
+                // Print progress
+                printProgress();
+                return metrics;
+              }
+            });
+          }
         }
       }
       
@@ -177,24 +187,26 @@ public class RetrieveStudyBenchmark extends Benchmark {
       
       // Update aggregates
       final double transferRate = (double) totalBytesRead / (double) totalLatency / 1048.576;
+      final double frameRate = (double) frameCount / ((double) totalLatency / 1000.0);
       queryInstancesAggregates.addValue(queryInstancesMetrics.getTotalLatency());
       firstResponseAggregates.addValue(firstResponseMetrics.get().getResponseLatency());
-      firstInstanceAggregates.addValue(firstInstanceMetrics.get().getTotalLatency());
+      firstFrameAggregates.addValue(firstFrameMetrics.get().getTotalLatency());
       totalAggregates.addValue(totalLatency);
       transferRateAggregates.addValue(transferRate);
+      frameRateAggregates.addValue(frameRate);
       
       // Print metrics
       printRetrieveStudyMetrics(queryInstancesMetrics.getTotalLatency(),
           firstResponseMetrics.get().getResponseLatency(),
-          firstInstanceMetrics.get().getTotalLatency(), totalLatency, totalBytesRead,
-          transferRate, cacheHits, cacheMisses);
+          firstFrameMetrics.get().getTotalLatency(), totalLatency, totalBytesRead,
+          transferRate, frameRate, cacheHits, cacheMisses);
       
       // Print iteration metrics to CSV file if output option is specified
       if (output != null) {
         if (iteration == 0) {
           output.println("ITERATION, QUERYING_INSTANCES_LATENCY, FIRST_BYTE_RECEIVED_LATENCY, "
-              + "READING_FIRST_INSTANCE_LATENCY, READING_WHOLE_STUDY_LATENCY, "
-              + "TOTAL_BYTES_READ, MB_READ_PER_SECOND");
+              + "READING_FIRST_FRAME_LATENCY, READING_WHOLE_STUDY_LATENCY, "
+              + "TOTAL_BYTES_READ, MB_READ_PER_SECOND, FRAMES_READ_PER_SECOND");
         }
         output.print(iteration);
         output.print(", ");
@@ -202,13 +214,15 @@ public class RetrieveStudyBenchmark extends Benchmark {
         output.print(", ");
         output.print(firstResponseMetrics.get().getResponseLatency());
         output.print(", ");
-        output.print(firstInstanceMetrics.get().getTotalLatency());
+        output.print(firstFrameMetrics.get().getTotalLatency());
         output.print(", ");
         output.print(totalLatency);
         output.print(", ");
         output.print(totalBytesRead);
         output.print(", ");
         output.print(transferRate);
+        output.print(", ");
+        output.print(frameRate);
         output.println();
       }
     }
@@ -220,7 +234,7 @@ public class RetrieveStudyBenchmark extends Benchmark {
   @Override
   protected void printAggregates() {
     printRetrieveStudyAggregates(queryInstancesAggregates, firstResponseAggregates,
-        firstInstanceAggregates, totalAggregates, transferRateAggregates);
+        firstFrameAggregates, totalAggregates, transferRateAggregates, frameRateAggregates);
   }
   
   /* Object mapper to convert JSON response */

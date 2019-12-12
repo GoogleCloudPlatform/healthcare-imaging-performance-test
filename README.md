@@ -111,7 +111,7 @@ Where:
 ### Retrieve study benchmark
 
 This benchmark shows how quickly you can retrieve a whole study. It involves sending requests to get instance information (QIDO) while also sending
-parallel GET requests to retrieve each instance (WADO).
+parallel GET requests to retrieve each instance frame (WADO).
 
 The name of this benchmark is `retrieve-study`. The command line has two additional required options:
 `-y` and `--dicom-study`. `--dicom_study` is the ID of the study in the DICOM store.
@@ -123,20 +123,21 @@ An example command line execution:
 In the example above the `retrieve-study` benchmark will:
 
 * Execute 3 times
-* Use a maximum of 5 threads to read instances of a study with ID = `1.2.276.0.7230010.3.1.2.2148188175.13.1558046897.715757` in parallel from the [NIH Chest X-ray](https://cloud.google.com/healthcare/docs/resources/public-datasets/nih-chest#cloud-healthcare-api)
+* Use a maximum of 5 threads to read frames of a study with ID = `1.2.276.0.7230010.3.1.2.2148188175.13.1558046897.715757` in parallel from the [NIH Chest X-ray](https://cloud.google.com/healthcare/docs/resources/public-datasets/nih-chest#cloud-healthcare-api)
 public dataset
 * Write the gathered metrics to a `results.csv` file
 
 The format of the output file is CSV. Each line represents the metrics of separate WADO requests and
 has the following format:
 
-    ITERATION, QUERYING_INSTANCES_LATENCY, FIRST_BYTE_RECEIVED_LATENCY, READING_FIRST_INSTANCE_LATENCY, READING_WHOLE_STUDY_LATENCY, TOTAL_BYTES_READ, MB_READ_PER_SECOND
+    ITERATION, QUERYING_INSTANCES_LATENCY, FIRST_BYTE_RECEIVED_LATENCY, READING_FIRST_FRAME_LATENCY, READING_WHOLE_STUDY_LATENCY, TOTAL_BYTES_READ, MB_READ_PER_SECOND, FRAMES_READ_PER_SECOND
 
 Where:
 - `ITERATION` is the number of iterations.
 - `QUERYING_INSTANCES_LATENCY` is the latency of querying instances in milliseconds.
 - `FIRST_BYTE_RECEIVED_LATENCY` is the latency of the first byte received in milliseconds.
-- `READING_FIRST_INSTANCE_LATENCY` is the latency of reading the first instance in milliseconds.
+- `READING_FIRST_FRAME_LATENCY` is the latency of reading the first frame in milliseconds.
 - `READING_WHOLE_STUDY_LATENCY` is the total latency of reading the whole study in milliseconds.
 - `TOTAL_BYTES_READ` is the total number of bytes read for the whole study.
 - `MB_READ_PER_SECOND` is the megabytes read per-second for the whole study.
+- `FRAMES_READ_PER_SECOND` is the frames read per-second for the whole study.

@@ -17,11 +17,11 @@ package com.google.chcapi.perfdiag.model;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
- * Describes DICOM study instance.
+ * Describes set of DICOM attributes.
  *
  * @author Mikhail Ukhlin
  */
-public class Instance {
+public class Attributes {
 
   /** DICOM study UID attribute. */
   @JsonProperty("0020000D")
@@ -34,6 +34,10 @@ public class Instance {
   /** DICOM study instance UID attribute. */
   @JsonProperty("00080018")
   private Attribute<String> instanceUID;
+
+  /** DICOM number of frames in a multi-frame image attribute. */
+  @JsonProperty("00280008")
+  private Attribute<Integer> frameCount;
 
   /**
    * Returns UID of DICOM study or {@code null} if not available.
@@ -61,4 +65,15 @@ public class Instance {
   public String getInstanceUID() {
     return instanceUID == null ? null : instanceUID.getFirstValue();
   }
+
+  /**
+   * Returns number of frames in a multi-frame image or {@code 1} if image consists of a single
+   * frame.
+   * 
+   * @return Number of frames.
+   */
+  public int getNumberOfFrames() {
+    return frameCount == null || frameCount.getFirstValue() == null ? 1 : frameCount.getFirstValue();
+  }
+
 }
