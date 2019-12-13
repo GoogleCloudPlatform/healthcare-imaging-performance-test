@@ -166,6 +166,35 @@ public final class HttpRequestProfilerFactory {
   }
 
   /**
+   * Constructs the {@code
+   * projects.locations.datasets.dicomStores.studies.series.instances.frames.retrieveFrames}
+   * profiling request for the specified DICOM study configuration, series and instance IDs and
+   * frame index.
+   *
+   * @param config DICOM study configuration.
+   * @param seriesId ID of the series.
+   * @param instanceId ID of the instance.
+   * @param frameIndex Index of the frame to retrieve.
+   * @return The {@link HttpRequestProfiler} instance.
+   */
+  public static HttpRequestProfiler createRetrieveDicomInstanceFrameRequest(
+      DicomStudyConfig config, String seriesId, String instanceId, int frameIndex) {
+    return new HttpRequestProfiler(
+        createHttpGetRequest(
+            buildDicomWebURI(config)
+                .append("/")
+                .append(encodeURIToken(config.getDicomStudyId()))
+                .append("/series/")
+                .append(encodeURIToken(seriesId))
+                .append("/instances/")
+                .append(encodeURIToken(instanceId))
+                .append("/frames/")
+                .append(frameIndex)
+                .toString(),
+            false));
+  }
+
+  /**
    * Constructs a new HTTP GET request for the specified URI.
    *
    * @param uri The HTTP request URI.

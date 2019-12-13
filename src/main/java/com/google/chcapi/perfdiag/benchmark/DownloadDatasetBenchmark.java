@@ -34,7 +34,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 
-import com.google.chcapi.perfdiag.model.Study;
+import com.google.chcapi.perfdiag.model.Attributes;
 import com.google.chcapi.perfdiag.benchmark.config.DicomStoreConfig;
 import com.google.chcapi.perfdiag.benchmark.stats.MetricAggregates;
 import com.google.chcapi.perfdiag.profiler.HttpRequestProfiler;
@@ -115,15 +115,16 @@ public class DownloadDatasetBenchmark extends Benchmark {
     final ByteArrayOutputStream buffer = new ByteArrayOutputStream();
     final long iterationStartTime = System.currentTimeMillis();
     final HttpRequestMetrics queryStudiesMetrics = queryStudiesRequest.execute(buffer);
-    final List<Study> studies = MAPPER.readValue(buffer.toByteArray(),
-        new TypeReference<List<Study>>() {});
-    printStudiesFound(studies.size(), commonConfig.getMaxThreads());
+    final List<Attributes> studies = MAPPER.readValue(buffer.toByteArray(),
+        new TypeReference<List<Attributes>>() {});
+    final int threadCount = Math.min(commonConfig.getMaxThreads(), studies.size());
+    printStudiesFound(studies.size(), threadCount);
     
     if (studies.size() > 0) {
       // Create separate task for each study
-      final ExecutorService pool = Executors.newFixedThreadPool(commonConfig.getMaxThreads());
+      final ExecutorService pool = Executors.newFixedThreadPool(threadCount);
       final List<Callable<HttpRequestMetrics>> tasks = new ArrayList<>();
-      for (Study study : studies) {
+      for (Attributes study : studies) {
         final String studyId = study.getStudyUID();
         if (studyId != null) {
           tasks.add(new Callable<HttpRequestMetrics>() {
