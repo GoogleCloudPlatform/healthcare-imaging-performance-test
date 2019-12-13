@@ -124,11 +124,12 @@ public class RetrieveStudyBenchmark extends Benchmark {
     final List<Attributes> instances = MAPPER.readValue(buffer.toByteArray(),
         new TypeReference<List<Attributes>>() {});
     int frameCount = instances.stream().mapToInt(Attributes::getNumberOfFrames).sum();
-    printInstancesFound(instances.size(), frameCount, commonConfig.getMaxThreads());
+    final int threadCount = Math.min(commonConfig.getMaxThreads(), frameCount);
+    printInstancesFound(instances.size(), frameCount, threadCount);
     
     if (instances.size() > 0) {
       // Create separate task for each frame
-      final ExecutorService pool = Executors.newFixedThreadPool(commonConfig.getMaxThreads());
+      final ExecutorService pool = Executors.newFixedThreadPool(threadCount);
       final List<Callable<HttpRequestMetrics>> tasks = new ArrayList<>();
       for (Attributes instance : instances) {
         final String seriesId = instance.getSeriesUID();

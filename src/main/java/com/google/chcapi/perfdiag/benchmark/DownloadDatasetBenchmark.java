@@ -117,11 +117,12 @@ public class DownloadDatasetBenchmark extends Benchmark {
     final HttpRequestMetrics queryStudiesMetrics = queryStudiesRequest.execute(buffer);
     final List<Attributes> studies = MAPPER.readValue(buffer.toByteArray(),
         new TypeReference<List<Attributes>>() {});
-    printStudiesFound(studies.size(), commonConfig.getMaxThreads());
+    final int threadCount = Math.min(commonConfig.getMaxThreads(), studies.size());
+    printStudiesFound(studies.size(), threadCount);
     
     if (studies.size() > 0) {
       // Create separate task for each study
-      final ExecutorService pool = Executors.newFixedThreadPool(commonConfig.getMaxThreads());
+      final ExecutorService pool = Executors.newFixedThreadPool(threadCount);
       final List<Callable<HttpRequestMetrics>> tasks = new ArrayList<>();
       for (Attributes study : studies) {
         final String studyId = study.getStudyUID();

@@ -100,7 +100,7 @@ public abstract class BenchmarkMessages {
    * @param threads Maximum number of threads to run in parallel.
    */
   public static void printStudiesFound(int studies, int threads) {
-    print("message.stadiesFound", studies, Math.min(studies, threads));
+    print("message.stadiesFound", studies, threads);
   }
   
   /**
@@ -111,7 +111,7 @@ public abstract class BenchmarkMessages {
    * @param threads Maximum number of threads to run in parallel.
    */
   public static void printInstancesFound(int instances, int frames, int threads) {
-    print("message.instancesFound", instances, frames, Math.min(frames, threads));
+    print("message.instancesFound", instances, frames, threads);
   }
   
   /**
