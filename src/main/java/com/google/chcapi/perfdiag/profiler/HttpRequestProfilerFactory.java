@@ -222,7 +222,6 @@ public final class HttpRequestProfilerFactory {
     return new HttpRequestProfiler(
             createHttpGetRequest(
                     buildDicomWebURI(config, false)
-                            .append("/")
                             .append(config.getRequestPath())
                             .toString(),
                     false));
