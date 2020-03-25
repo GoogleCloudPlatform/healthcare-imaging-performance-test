@@ -15,6 +15,7 @@
 package com.google.chcapi.perfdiag;
 
 import com.google.chcapi.perfdiag.benchmark.DownloadDatasetBenchmark;
+import com.google.chcapi.perfdiag.benchmark.QidoBenchmark;
 import com.google.chcapi.perfdiag.benchmark.RetrieveStudyBenchmark;
 import java.util.ResourceBundle;
 import picocli.CommandLine;
@@ -86,5 +87,6 @@ public class BenchmarkLauncher implements Runnable {
               new CommandLine(LAUNCHER)
                   .addSubcommand("help", new HelpCommand())
                   .addSubcommand("download-dataset", new DownloadDatasetBenchmark())
-                  .addSubcommand("retrieve-study", new RetrieveStudyBenchmark()));
+                  .addSubcommand("retrieve-study", new RetrieveStudyBenchmark())
+                  .addSubcommand("qido", new QidoBenchmark()));
 }
