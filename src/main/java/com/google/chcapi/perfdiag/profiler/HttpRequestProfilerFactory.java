@@ -23,6 +23,7 @@ import java.nio.charset.StandardCharsets;
 import java.net.URL;
 import java.net.URLEncoder;
 
+import com.google.chcapi.perfdiag.benchmark.config.DicomWebRequestConfig;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpUriRequest;
 
@@ -104,7 +105,7 @@ public final class HttpRequestProfilerFactory {
    */
   public static HttpRequestProfiler createListDicomStudiesRequest(DicomStoreConfig config) {
     return new HttpRequestProfiler(
-        createHttpGetRequest(buildDicomWebURI(config).toString(), false));
+        createHttpGetRequest(buildDicomWebURI(config, true).toString(), false));
   }
 
   /**
@@ -119,7 +120,7 @@ public final class HttpRequestProfilerFactory {
       DicomStoreConfig config, String studyId) {
     return new HttpRequestProfiler(
         createHttpGetRequest(
-            buildDicomWebURI(config).append("/").append(encodeURIToken(studyId)).toString(), true));
+            buildDicomWebURI(config, true).append("/").append(encodeURIToken(studyId)).toString(), true));
   }
 
   /**
@@ -132,7 +133,7 @@ public final class HttpRequestProfilerFactory {
   public static HttpRequestProfiler createListDicomStudyInstancesRequest(DicomStudyConfig config) {
     return new HttpRequestProfiler(
         createHttpGetRequest(
-            buildDicomWebURI(config)
+            buildDicomWebURI(config, true)
                 .append("/")
                 .append(encodeURIToken(config.getDicomStudyId()))
                 .append("/instances")
@@ -154,7 +155,7 @@ public final class HttpRequestProfilerFactory {
       DicomStudyConfig config, String seriesId, String instanceId) {
     return new HttpRequestProfiler(
         createHttpGetRequest(
-            buildDicomWebURI(config)
+            buildDicomWebURI(config, true)
                 .append("/")
                 .append(encodeURIToken(config.getDicomStudyId()))
                 .append("/series/")
@@ -181,7 +182,7 @@ public final class HttpRequestProfilerFactory {
       DicomStudyConfig config, String seriesId, String instanceId, int frameIndex) {
     return new HttpRequestProfiler(
         createHttpGetRequest(
-            buildDicomWebURI(config)
+            buildDicomWebURI(config, true)
                 .append("/")
                 .append(encodeURIToken(config.getDicomStudyId()))
                 .append("/series/")
@@ -201,13 +202,30 @@ public final class HttpRequestProfilerFactory {
    * @param download {@code true} if it is download request.
    * @return A new prepared HTTP GET request instance.
    */
-  private static HttpUriRequest createHttpGetRequest(String uri, boolean download) {
+  private static HttpUriRequest createHttpGetRequest(String uri, boolean withDicomMultipartHeader) {
     final HttpGet request = new HttpGet(uri);
-    if (download) {
+    if (withDicomMultipartHeader) {
       request.setHeader("Accept", "multipart/related; type=application/dicom; transfer-syntax=*");
     }
     request.setHeader("Authorization", "Bearer " + CREDENTIAL.getAccessToken());
     return request;
+  }
+
+  /**
+   * Constructs a new HTTP GET request for the specified URI.
+   *
+   * @param uri The HTTP request URI.
+   * @param download {@code true} if it is download request.
+   * @return A new prepared HTTP GET request instance.
+   */
+  public static HttpRequestProfiler createQidoRequest(DicomWebRequestConfig config) {
+    return new HttpRequestProfiler(
+            createHttpGetRequest(
+                    buildDicomWebURI(config, false)
+                            .append("/")
+                            .append(config.getRequestPath())
+                            .toString(),
+                    false));
   }
 
   /**
@@ -216,8 +234,8 @@ public final class HttpRequestProfilerFactory {
    * @param config DICOM store configuration.
    * @return DICOM Web request URI as {@code StringBuilder} instance for further URI construction.
    */
-  private static StringBuilder buildDicomWebURI(DicomStoreConfig config) {
-    return new StringBuilder(endpoint)
+  private static StringBuilder buildDicomWebURI(DicomStoreConfig config, boolean withTrailingStudies) {
+    StringBuilder builder = new StringBuilder(endpoint)
         .append("/projects/")
         .append(encodeURIToken(config.getProjectId()))
         .append("/locations/")
@@ -226,7 +244,11 @@ public final class HttpRequestProfilerFactory {
         .append(encodeURIToken(config.getDatasetId()))
         .append("/dicomStores/")
         .append(encodeURIToken(config.getDicomStoreId()))
-        .append("/dicomWeb/studies");
+        .append("/dicomWeb");
+    if (withTrailingStudies) {
+      builder.append("/studies");
+    }
+    return builder;
   }
 
   /**
