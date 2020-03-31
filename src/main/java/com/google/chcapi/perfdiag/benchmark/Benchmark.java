@@ -124,7 +124,6 @@ public abstract class Benchmark extends BenchmarkMessages implements Runnable {
         printIterationStarted(i);
         runIteration(i, output);
       } catch (Exception e) {
-        System.out.println(">>>>>>> " + e);
         throw BenchmarkException.iterationFailed(i, e);
       }
     }
