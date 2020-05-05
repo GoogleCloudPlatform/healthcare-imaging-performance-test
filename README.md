@@ -143,9 +143,9 @@ Where:
 - `FRAMES_READ_PER_SECOND` is the frames read per-second for the whole study.
 
 
-### qido benchmark
+### Search benchmark
 
-This benchmark gives performance statistics for a DICOM Web QIDO request.
+This benchmark gives performance statistics for a DICOM Web search (QIDO) request.
 
 The name of this benchmark is `qido`. The command line has one additional required option: `-r` (`--request_path`) for a QIDO request path whose
 format can be found [here](http://dicom.nema.org/medical/dicom/current/output/html/part18.html#sect_10.6).
