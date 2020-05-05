@@ -103,7 +103,6 @@ public class HttpRequestProfiler {
 
       // Check status code
       final int status = response.getStatusLine().getStatusCode();
-
       if (status < HttpStatus.SC_OK || status >= HttpStatus.SC_MULTIPLE_CHOICES) {
         // Request failed
         throw new HttpResponseException(status, response.getStatusLine().getReasonPhrase());
@@ -113,14 +112,14 @@ public class HttpRequestProfiler {
       if (status == HttpStatus.SC_NO_CONTENT) {
         // No content
         return new HttpRequestMetrics(startTime, responseTime, System.currentTimeMillis(), 0L,
-                CacheStatus.fromResponse(response));
+          CacheStatus.fromResponse(response));
       }
 
       // Read content
       try (InputStream input = response.getEntity().getContent()) {
         final long bytesRead = IOUtils.copyLarge(input, stream);
         return new HttpRequestMetrics(startTime, responseTime, System.currentTimeMillis(),
-                bytesRead, CacheStatus.fromResponse(response));
+          bytesRead, CacheStatus.fromResponse(response));
       }
     }
   }
