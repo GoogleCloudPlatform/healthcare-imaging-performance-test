@@ -26,6 +26,8 @@ import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
+
 
 /**
  * HTTP request wrapper that allows to execute request, read response and calculate metrics
@@ -37,10 +39,21 @@ import org.apache.http.impl.client.HttpClients;
 public class HttpRequestProfiler {
 
   /* HTTP client instance */
-  private static final CloseableHttpClient HTTP_CLIENT = HttpClients.createDefault();
+  private static CloseableHttpClient HTTP_CLIENT;
 
   /** Prepared HTTP request. */
   private final HttpUriRequest request;
+
+  private static CloseableHttpClient httpClient() {
+    if (HTTP_CLIENT == null) {
+      PoolingHttpClientConnectionManager cm = new PoolingHttpClientConnectionManager();
+      cm.setDefaultMaxPerRoute(200);
+      cm.setMaxTotal(30);
+      HTTP_CLIENT = HttpClients.custom().setConnectionManager(cm).build();
+    }
+
+    return HTTP_CLIENT;
+  }
 
   /**
    * Constructs a new {@code HttpRequestProfiler} with the specified HTTP request.
@@ -85,7 +98,7 @@ public class HttpRequestProfiler {
   private HttpRequestMetrics doExecute(OutputStream stream) throws IOException {
     // Execute request and measure metrics
     final long startTime = System.currentTimeMillis();
-    try (CloseableHttpResponse response = HTTP_CLIENT.execute(request)) {
+    try (CloseableHttpResponse response = httpClient().execute(request)) {
       final long responseTime = System.currentTimeMillis();
 
       // Check status code
@@ -99,14 +112,14 @@ public class HttpRequestProfiler {
       if (status == HttpStatus.SC_NO_CONTENT) {
         // No content
         return new HttpRequestMetrics(startTime, responseTime, System.currentTimeMillis(), 0L,
-            CacheStatus.fromResponse(response));
+          CacheStatus.fromResponse(response));
       }
 
       // Read content
       try (InputStream input = response.getEntity().getContent()) {
         final long bytesRead = IOUtils.copyLarge(input, stream);
         return new HttpRequestMetrics(startTime, responseTime, System.currentTimeMillis(),
-            bytesRead, CacheStatus.fromResponse(response));
+          bytesRead, CacheStatus.fromResponse(response));
       }
     }
   }
