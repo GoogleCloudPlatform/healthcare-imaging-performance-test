@@ -159,7 +159,7 @@ In the example above, the `qido` benchmark will:
 * Execute 10 times of sending a QIDO request to search for all series whose study UID is 1.2.276.0.7230010.3.1.2.2148188175.13.1558046897.715757
 * Write the gathered metrics to a `results.csv` file
 
-The format of the output file is CSV. Each line represents the metrics of separate WADO requests and
+The format of the output file is CSV. Each line represents the metrics of separate QIDO requests and
 has the following format:
 
     ITERATION, FIRST_BYTE_RECEIVED_LATENCY, TOTAL_LATENCY
