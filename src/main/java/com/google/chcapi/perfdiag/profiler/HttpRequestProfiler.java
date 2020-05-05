@@ -48,7 +48,7 @@ public class HttpRequestProfiler {
     if (HTTP_CLIENT == null) {
       PoolingHttpClientConnectionManager cm = new PoolingHttpClientConnectionManager();
       cm.setDefaultMaxPerRoute(200);
-      cm.setMaxTotal(20);
+      cm.setMaxTotal(30);
       HTTP_CLIENT = HttpClients.custom().setConnectionManager(cm).build();
     }
 
