@@ -150,7 +150,58 @@ public abstract class BenchmarkMessages {
         cacheHits,
         cacheMisses);
   }
-  
+
+  /**
+   * Prints metrics of retrieve study iteration to stdout.
+   *
+   * @param firstResponseLatency Latency of first byte received.
+   * @param totalLatency Latency of reading whole study.
+   */
+  public static void printQidoMetrics(long firstResponseLatency,  long totalLatency) {
+    print("message.qidoMetrics",
+            firstResponseLatency,
+            totalLatency);
+  }
+
+  /**
+   * Prints aggregates of retrieve study benchmark to stdout.
+   *
+   * @param firstResponseAggregates Aggregates for latency of first byte received.
+   * @param totalAggregates Aggregates for latency of downloading the whole study.
+   */
+  public static void printQidoAggregates(
+          MetricAggregates firstResponseAggregates,
+          MetricAggregates totalAggregates) {
+    print("message.qidoAggregates",
+            firstResponseAggregates.getMin(),
+            totalAggregates.getMin(),
+            firstResponseAggregates.getMax(),
+            totalAggregates.getMax(),
+            firstResponseAggregates.getMean(),
+            totalAggregates.getMean(),
+            firstResponseAggregates.getStddev(),
+            totalAggregates.getStddev(),
+            firstResponseAggregates.getPercentile(MetricAggregates.MEDIAN),
+            totalAggregates.getPercentile(MetricAggregates.MEDIAN),
+            firstResponseAggregates.getPercentile(MetricAggregates.P1),
+            totalAggregates.getPercentile(MetricAggregates.P1),
+            firstResponseAggregates.getPercentile(MetricAggregates.P2),
+            totalAggregates.getPercentile(MetricAggregates.P2),
+            firstResponseAggregates.getPercentile(MetricAggregates.P5),
+            totalAggregates.getPercentile(MetricAggregates.P5),
+            firstResponseAggregates.getPercentile(MetricAggregates.P10),
+            totalAggregates.getPercentile(MetricAggregates.P10),
+            firstResponseAggregates.getPercentile(MetricAggregates.P90),
+            totalAggregates.getPercentile(MetricAggregates.P90),
+            firstResponseAggregates.getPercentile(MetricAggregates.P95),
+            totalAggregates.getPercentile(MetricAggregates.P95),
+            firstResponseAggregates.getPercentile(MetricAggregates.P98),
+            totalAggregates.getPercentile(MetricAggregates.P98),
+            firstResponseAggregates.getPercentile(MetricAggregates.P99),
+            totalAggregates.getPercentile(MetricAggregates.P99));
+  }
+
+
   /**
    * Prints aggregates of retrieve study benchmark to stdout.
    * 

@@ -141,3 +141,30 @@ Where:
 - `TOTAL_BYTES_READ` is the total number of bytes read for the whole study.
 - `MB_READ_PER_SECOND` is the megabytes read per-second for the whole study.
 - `FRAMES_READ_PER_SECOND` is the frames read per-second for the whole study.
+
+
+### Search benchmark
+
+This benchmark gives performance statistics for a DICOM Web search (QIDO) request.
+
+The name of this benchmark is `qido`. The command line has one additional required option: `-r` (`--request_path`) for a QIDO request path whose
+format can be found [here](http://dicom.nema.org/medical/dicom/current/output/html/part18.html#sect_10.6).
+
+An example command line execution:
+
+    java -jar healthcare-imaging-performance-test-X.Y.Z-jar-with-dependencies.jar benchmark qido -i 10 -o results.csv -p chc-nih-chest-xray -l us-central1 -d nih-chest-xray -s nih-chest-xray -r /studies/1.2.276.0.7230010.3.1.2.2148188175.13.1558046897.715757/series
+
+In the example above, the `qido` benchmark will:
+
+* Execute 10 times of sending a QIDO request to search for all series whose study UID is 1.2.276.0.7230010.3.1.2.2148188175.13.1558046897.715757
+* Write the gathered metrics to a `results.csv` file
+
+The format of the output file is CSV. Each line represents the metrics of separate QIDO requests and
+has the following format:
+
+    ITERATION, FIRST_BYTE_RECEIVED_LATENCY, TOTAL_LATENCY
+
+Where:
+- `ITERATION` is the number of iterations.
+- `FIRST_BYTE_RECEIVED_LATENCY` is the latency of the first byte received in milliseconds.
+- `READING_ALL_RESOURCES_LATENCY` is the latency of reading all resources contained in the result of the QIDO request.
