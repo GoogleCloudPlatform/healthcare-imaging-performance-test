@@ -18,11 +18,11 @@ import com.google.chcapi.perfdiag.benchmark.DownloadDatasetBenchmark;
 import com.google.chcapi.perfdiag.benchmark.RetrieveStudyBenchmark;
 import java.util.ResourceBundle;
 import picocli.CommandLine;
-import picocli.CommandLine.Command;
-import picocli.CommandLine.HelpCommand;
 import picocli.CommandLine.IExecutionExceptionHandler;
 import picocli.CommandLine.ParseResult;
 
+import picocli.CommandLine.Command;
+import picocli.CommandLine.HelpCommand;
 /**
  * The CLI for benchmark DICOM data transmission routines backed by Google Cloud Healthcare API.
  *
